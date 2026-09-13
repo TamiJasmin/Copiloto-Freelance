@@ -8,9 +8,11 @@ import { Input } from '@/components/ui/Input';
 import { Screen, ScreenHeader } from '@/components/ui/Screen';
 import { useSession } from '@/hooks/useSession';
 import { supabase } from '@/lib/supabase';
-import { friendlyError } from '@/lib/errors';
+import { authError, friendlyError } from '@/lib/errors';
 import { C } from '@/theme/tokens';
 import type { PaymentInfo } from '@/types/db';
+
+const MIN_PASSWORD = 8;
 
 const TIPOS: { value: NonNullable<PaymentInfo['tipo']>; label: string; hint: string }[] = [
   { value: 'alias', label: 'Alias', hint: 'mi.alias.mp' },
@@ -28,6 +30,11 @@ export default function Settings() {
   const [tipo, setTipo] = useState<NonNullable<PaymentInfo['tipo']>>('alias');
   const [valor, setValor] = useState('');
   const [titular, setTitular] = useState('');
+
+  const [newPassword, setNewPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -75,6 +82,21 @@ export default function Settings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const savePassword = async () => {
+    setSavingPassword(true);
+    setPasswordError(null);
+    setPasswordSaved(false);
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setSavingPassword(false);
+
+    if (error) return setPasswordError(authError(error));
+
+    setNewPassword('');
+    setPasswordSaved(true);
+    setTimeout(() => setPasswordSaved(false), 3000);
   };
 
   const tipoActual = TIPOS.find((t) => t.value === tipo)!;
@@ -209,11 +231,59 @@ export default function Settings() {
           <Text className="text-micro font-bold uppercase text-muted">Cuenta</Text>
           <Text className="mt-2 text-label text-muted">{session?.user?.email}</Text>
 
+          <View className="mt-5">
+            <Text className="text-label font-semibold text-ink">Contraseña</Text>
+            {/* Supabase no expone si la cuenta ya tiene contraseña, así que
+                el texto sirve para ambos casos en vez de afirmar de más. */}
+            <Text className="mt-1 text-caption leading-4 text-muted">
+              Definí una para entrar directo, sin esperar el correo. Si ya tenías una, esta la
+              reemplaza. El link de acceso va a seguir funcionando igual.
+            </Text>
+
+            <View className="mt-3">
+              <Input
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder={`Al menos ${MIN_PASSWORD} caracteres`}
+                password
+                autoCapitalize="none"
+                autoComplete="new-password"
+              />
+            </View>
+
+            <Pressable
+              onPress={savePassword}
+              disabled={newPassword.length < MIN_PASSWORD || savingPassword}
+              hitSlop={8}
+              accessibilityRole="button"
+              className="mt-3 self-start active:opacity-60"
+            >
+              <Text
+                className="text-label font-bold"
+                style={{
+                  color: newPassword.length >= MIN_PASSWORD ? C.accent : C.faint,
+                }}
+              >
+                {savingPassword
+                  ? 'Guardando…'
+                  : passwordSaved
+                    ? 'Contraseña guardada'
+                    : 'Guardar contraseña'}
+              </Text>
+            </Pressable>
+
+            {passwordError ? (
+              <Text className="mt-2 text-caption leading-4" style={{ color: C.danger }}>
+                {passwordError}
+              </Text>
+            ) : null}
+          </View>
+
           <Pressable
             onPress={signOut}
             hitSlop={8}
             accessibilityRole="button"
-            className="mt-4 self-start active:opacity-60"
+            className="mt-7 self-start active:opacity-60"
           >
             <Text className="text-label font-bold" style={{ color: C.danger }}>
               Cerrar sesión

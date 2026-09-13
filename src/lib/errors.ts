@@ -47,3 +47,34 @@ export function friendlyError(e: unknown): string {
   }
   return raw;
 }
+
+/**
+ * Errores de autenticación. Supabase los devuelve en inglés y algunos son
+ * engañosos: "Invalid login credentials" también aparece cuando la cuenta
+ * existe pero nunca tuvo contraseña, que es el caso de quien se registró
+ * con un link de acceso.
+ */
+export function authError(e: unknown): string {
+  const raw = errorMessage(e);
+  const m = raw.toLowerCase();
+
+  if (m.includes('invalid login credentials')) {
+    return 'Correo o contraseña incorrectos. Si creaste tu cuenta con un link de acceso, todavía no tenés contraseña: entrá con el link y creala en Mi negocio.';
+  }
+  if (m.includes('email not confirmed')) {
+    return 'Todavía no confirmaste tu correo. Buscá el mail de confirmación que te enviamos.';
+  }
+  if (m.includes('user already registered') || m.includes('already been registered')) {
+    return 'Ese correo ya tiene cuenta. Probá ingresar en vez de crear una.';
+  }
+  if (m.includes('password should be at least')) {
+    return 'La contraseña es demasiado corta: usá al menos 8 caracteres.';
+  }
+  if (m.includes('for security purposes') || m.includes('rate limit') || m.includes('too many')) {
+    return 'Demasiados intentos seguidos. Esperá un minuto y probá de nuevo.';
+  }
+  if (m.includes('new password should be different')) {
+    return 'La contraseña nueva tiene que ser distinta de la actual.';
+  }
+  return raw;
+}
