@@ -1,12 +1,177 @@
-import { Placeholder } from '@/components/ui/Placeholder';
+import { useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-// TODO(MVP-2): cliente (buscar/crear) -> ítems dinámicos -> Generar PDF y Enviar.
-// Servicios ya listos: src/services/pdf.ts (generateAndUpload) y src/services/whatsapp.ts.
+import { ClientPicker, type ClientDraft } from '@/components/quote/ClientPicker';
+import {
+  ItemsEditor,
+  emptyItem,
+  itemsTotal,
+  parseAmount,
+  type ItemDraft,
+} from '@/components/quote/ItemsEditor';
+import { Button } from '@/components/ui/Button';
+import { useClients } from '@/hooks/useClients';
+import { useSession } from '@/hooks/useSession';
+import { createQuote, sendQuote } from '@/services/quotes';
+import { C } from '@/theme/tokens';
+
+type Errors = { client?: string | null; items?: string | null };
+
 export default function NewQuote() {
+  const router = useRouter();
+  const { session, profile } = useSession();
+  const { clients, createClient } = useClients();
+
+  const [client, setClient] = useState<ClientDraft>({ id: null, name: '', whatsapp: '' });
+  const [items, setItems] = useState<ItemDraft[]>([emptyItem()]);
+  const [errors, setErrors] = useState<Errors>({});
+  const [busy, setBusy] = useState<'send' | 'draft' | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  const currency = profile?.currency ?? 'ARS';
+  const total = itemsTotal(items);
+
+  const validate = (): boolean => {
+    const next: Errors = {};
+    if (!client.id && client.name.trim().length < 2) {
+      next.client = 'Elegí un cliente o escribí un nombre';
+    }
+    if (total <= 0) {
+      next.items = 'Cargá al menos un ítem con monto';
+    }
+    setErrors(next);
+    return !next.client && !next.items;
+  };
+
+  const submit = async (mode: 'send' | 'draft') => {
+    if (!validate()) return;
+    if (!session?.user) return setFailure('Tu sesión expiró, volvé a entrar.');
+    if (mode === 'send' && !profile) {
+      return setFailure('Todavía estamos cargando los datos de tu negocio.');
+    }
+
+    setBusy(mode);
+    setFailure(null);
+
+    try {
+      // Cliente nuevo: se da de alta recién acá, no mientras tipea.
+      const clientId = client.id ?? (await createClient(client.name, client.whatsapp)).id;
+
+      const quote = await createQuote({
+        userId: session.user.id,
+        clientId,
+        currency,
+        total,
+        items: items
+          .filter((i) => parseAmount(i.amount) > 0)
+          .map((i) => ({
+            description: i.description.trim() || 'Servicio',
+            amount: parseAmount(i.amount),
+          })),
+      });
+
+      if (mode === 'send') await sendQuote(quote, profile!);
+
+      router.back();
+    } catch (e) {
+      setFailure(e instanceof Error ? e.message : 'No pudimos guardar el presupuesto.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
-    <Placeholder
-      title="Nuevo Presupuesto"
-      hint="Creador express: cliente, ítems y 'Generar PDF y Enviar' por WhatsApp."
-    />
+    <View className="flex-1 bg-bg">
+      <SafeAreaView className="flex-1" edges={['top']}>
+        {/* ---------- Header ---------- */}
+        <View className="flex-row items-center justify-between px-5 pb-5 pt-2">
+          <Text className="text-[22px] font-bold tracking-tight text-ink">Nuevo Presupuesto</Text>
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar"
+            className="h-10 w-10 items-center justify-center rounded-full bg-surface active:opacity-70"
+          >
+            <Ionicons name="close" size={20} color={C.muted} />
+          </Pressable>
+        </View>
+
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={90}
+        >
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <ClientPicker
+              clients={clients}
+              value={client}
+              onChange={(c) => {
+                setClient(c);
+                if (errors.client) setErrors((e) => ({ ...e, client: null }));
+              }}
+              error={errors.client}
+            />
+
+            <View className="mt-7">
+              <ItemsEditor
+                items={items}
+                onChange={(i) => {
+                  setItems(i);
+                  if (errors.items) setErrors((e) => ({ ...e, items: null }));
+                }}
+                currency={currency}
+                error={errors.items}
+              />
+            </View>
+
+            {failure ? (
+              <View className="mt-5 rounded-xl border border-border bg-surface px-4 py-3.5">
+                <Text className="text-[13px] leading-5" style={{ color: C.danger }}>
+                  {failure}
+                </Text>
+              </View>
+            ) : null}
+          </ScrollView>
+
+          {/* ---------- Acciones ---------- */}
+          <View className="border-t border-border px-5 pb-8 pt-4" style={{ backgroundColor: C.bg }}>
+            <Button
+              label="Generar PDF y Enviar"
+              icon="logo-whatsapp"
+              loading={busy === 'send'}
+              disabled={busy !== null}
+              onPress={() => submit('send')}
+            />
+            <Pressable
+              onPress={() => submit('draft')}
+              disabled={busy !== null}
+              hitSlop={8}
+              accessibilityRole="button"
+              className="mt-4 items-center active:opacity-60"
+            >
+              <Text className="text-[14px] font-semibold text-muted">
+                {busy === 'draft' ? 'Guardando…' : 'Guardar como borrador'}
+              </Text>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }

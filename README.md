@@ -43,19 +43,22 @@ app/                          Rutas (expo-router, file-based)
   _layout.tsx                 Providers + portero de sesión
   (auth)/login.tsx            Email magic link + Google
   (app)/index.tsx             ★ Dashboard
-  (app)/quote/new.tsx         Creador express  [MVP-2]
+  (app)/quote/new.tsx         ★ Creador express
   (app)/quote/[id].tsx        Detalle + cobranza  [MVP-2]
   (app)/settings.tsx          Datos del negocio y de cobro  [MVP-2]
 
 src/
-  components/ui/              Primitivas: Button, StatusPill, Placeholder
+  components/ui/              Primitivas: Button, Input, StatusPill
+  components/quote/           ClientPicker, ItemsEditor
   components/dashboard/       BalanceCard, MiniStat, QuoteRow
   hooks/useSession.tsx        Sesión + perfil del usuario
   hooks/useDashboard.ts       Totales (RPC) + pendientes, con realtime
+  hooks/useClients.ts         Agenda en memoria + alta de clientes
   lib/supabase.ts             Cliente único
   lib/format.ts               Moneda, fechas relativas, teléfonos E.164
   services/whatsapp.ts        Links wa.me + plantillas de mensaje
   services/pdf.ts             HTML → PDF → Storage → link firmado
+  services/quotes.ts          Alta de presupuesto y flujo de envío
   theme/tokens.ts             Colores en JS (espeja tailwind.config.js)
   types/db.ts                 Tipos de las tablas
 
@@ -87,10 +90,17 @@ El acento significa una sola cosa en toda la app: *plata que entró*.
 - [x] Dashboard: cobrado vs. presupuestado, pendientes, CTA
 - [x] Recordatorio de cobro por WhatsApp desde cada fila
 - [x] Servicio de PDF (plantilla + subida + link firmado)
-- [ ] Creador de presupuestos express
+- [x] Creador de presupuestos express (cliente + ítems + enviar)
 - [ ] Detalle de presupuesto y cambio de estado
 - [ ] Pantalla de datos del negocio
 
 ## 6. Verificado
 
 `npx tsc --noEmit` sin errores · `expo export` OK en web, iOS y Android.
+
+**Límite conocido:** en la versión web `expo-print` no puede generar un archivo
+para subir; abre el diálogo de impresión del navegador y el PDF se comparte a
+mano. El flujo completo de envío funciona en iOS y Android.
+
+Los parsers de base64 y de montos están probados contra casos de borde
+(longitudes 0-499 y 22 formatos de número).

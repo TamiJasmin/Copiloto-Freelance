@@ -1,8 +1,37 @@
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
+import { Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { money } from '@/lib/format';
 import type { QuoteWithClient, User } from '@/types/db';
+
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+/**
+ * Decodificador propio: `atob` existe en Hermes moderno pero no en todas las
+ * versiones, y un PDF corrupto por un global faltante es un bug caro de rastrear.
+ */
+function base64ToBytes(b64: string): Uint8Array {
+  // Se descarta todo lo que no sea alfabeto base64: padding '=' y saltos de línea.
+  const chars = b64.replace(/[^A-Za-z0-9+/]/g, '');
+  const bytes = new Uint8Array(Math.floor((chars.length * 6) / 8));
+
+  let p = 0;
+  let buffer = 0;
+  let bits = 0;
+
+  // Acumulador de bits: no asume que la entrada venga en grupos de 4 completos.
+  for (let i = 0; i < chars.length; i++) {
+    buffer = (buffer << 6) | B64.indexOf(chars[i]);
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes[p++] = (buffer >> bits) & 0xff;
+    }
+  }
+
+  return bytes;
+}
 
 /**
  * Plantilla del PDF. Es intencionalmente clara (papel = claro) aunque la app
@@ -88,12 +117,23 @@ export async function generateAndUpload(
   quote: QuoteWithClient,
   user: User,
 ): Promise<{ uri: string; signedUrl: string }> {
-  const { uri } = await Print.printToFileAsync({ html: template(quote, user) });
+  const html = template(quote, user);
+
+  if (Platform.OS === 'web') {
+    // printToFileAsync no existe en web: se abre el diálogo de impresión del
+    // navegador y el usuario guarda como PDF. No hay archivo que subir.
+    await Print.printAsync({ html });
+    throw new Error(
+      'En la versión web guardá el PDF desde el diálogo de impresión y compartilo a mano.',
+    );
+  }
+
+  const { uri } = await Print.printToFileAsync({ html });
 
   const base64 = await FileSystem.readAsStringAsync(uri, {
     encoding: FileSystem.EncodingType.Base64,
   });
-  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const bytes = base64ToBytes(base64);
 
   const path = `${user.id}/presupuesto-${quote.number}.pdf`;
   const { error } = await supabase.storage
