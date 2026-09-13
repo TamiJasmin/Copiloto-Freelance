@@ -92,7 +92,11 @@ Al terminar, el APK queda en *Artifacts* de esa corrida.
 Antes de la primera vez hay que cargar los secretos en
 **Settings → Secrets and variables → Actions**:
 
-
+```
+EXPO_PUBLIC_SUPABASE_URL
+EXPO_PUBLIC_SUPABASE_ANON_KEY
+EXPO_PUBLIC_APP_URL
+```
 
 Sin ellos el workflow corta con un mensaje claro, en vez de entregar un APK
 que compila bien y falla al abrirse.
@@ -101,9 +105,9 @@ que compila bien y falla al abrirse.
 > la clave de depuracion, asi que se instala en cualquier telefono pero
 > Google lo rechaza. Para publicar hace falta un keystore propio.
 
-El proyecto nativo (, ) no se versiona: lo genera
- en cada compilacion, asi no puede quedar desincronizado con
-.
+El proyecto nativo (`android/`, `ios/`) no se versiona: lo genera
+`expo prebuild` en cada compilación, así no puede quedar desincronizado con
+`app.json`.
 
 ## 6. Arquitectura
 
