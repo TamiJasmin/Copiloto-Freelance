@@ -229,10 +229,11 @@ El acento significa una sola cosa en toda la app: *plata que entró*.
 - [x] Aceptar el presupuesto desde el link del cliente
 - [x] Pagar o copiar el alias desde la pagina del presupuesto
 - [x] Link de pago con monto exacto, por presupuesto
+- [x] Generacion automatica del link contra la API de Mercado Pago
 - [x] APK de Android desde GitHub Actions
 
-Pendiente: generar el link de MP automaticamente (requiere Edge Function),
-seña y pagos parciales, recordatorios automáticos, exportar para el contador.
+Pendiente: webhook de Mercado Pago para marcar cobrado solo, seña y pagos
+parciales, recordatorios automáticos, exportar para el contador.
 
 ## 10. Verificado
 
