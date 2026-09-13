@@ -1,6 +1,8 @@
 services:
   - type: web
-    name: lana
+    # El nombre define el subdominio y son globales en Render: "lana" ya
+    # esta tomado por otro sitio. Elegi uno libre antes de usar el Blueprint.
+    name: lana-app
     runtime: static
     buildCommand: npm ci && npx expo export -p web
     staticPublishPath: ./dist
