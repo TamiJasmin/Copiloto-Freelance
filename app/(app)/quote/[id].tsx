@@ -12,6 +12,7 @@ import { useQuote } from '@/hooks/useQuotes';
 import { useSession } from '@/hooks/useSession';
 import { deleteQuote, remindQuote, sendQuote, updateQuoteStatus } from '@/services/quotes';
 import { quoteShareUrl } from '@/lib/share';
+import { generarLinkDePago } from '@/services/mercadopago';
 import { money, relativeDay } from '@/lib/format';
 import { friendlyError } from '@/lib/errors';
 import { ACCION_ESTADO, quoteView, siguientesEstados, VIEW_META } from '@/lib/quoteState';
@@ -26,6 +27,7 @@ export default function QuoteDetail() {
 
   const [busy, setBusy] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
+  const [generando, setGenerando] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   if (loading) {
@@ -90,6 +92,21 @@ export default function QuoteDetail() {
       return setActionError('Falta correr la migración 0003 en Supabase para generar el link.');
     }
     Linking.openURL(quoteShareUrl(quote.share_token));
+  };
+
+  /** Pide a Mercado Pago un link con el monto exacto de este presupuesto. */
+  const generarLink = async () => {
+    setGenerando(true);
+    setActionError(null);
+    try {
+      await generarLinkDePago(quote.id);
+      await reload();
+    } catch (e) {
+      console.error('[mercadopago]', e);
+      setActionError(friendlyError(e));
+    } finally {
+      setGenerando(false);
+    }
   };
 
   const cambiarEstado = (status: QuoteStatus) => run(() => updateQuoteStatus(quote.id, status));
@@ -229,6 +246,42 @@ export default function QuoteDetail() {
         >
           <Ionicons name="create-outline" size={17} color={C.muted} />
           <Text className="ml-2.5 flex-1 text-body text-ink">Editar ítems y vencimiento</Text>
+          <Ionicons name="chevron-forward" size={16} color={C.faint} />
+        </Pressable>
+      ) : null}
+
+      {/* ---------- Link de pago ----------
+          Sólo mientras el presupuesto sigue abierto: generar un link de
+          cobro para algo ya cobrado o anulado no tiene sentido. */}
+      {!cerrado ? (
+        <Pressable
+          onPress={quote.payment_link ? () => Linking.openURL(quote.payment_link!) : generarLink}
+          disabled={generando}
+          accessibilityRole="button"
+          className="mt-2 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 hover:bg-elevated active:bg-elevated"
+        >
+          <Ionicons
+            name={quote.payment_link ? 'card' : 'card-outline'}
+            size={17}
+            color={quote.payment_link ? C.accent : C.muted}
+          />
+          <View className="ml-2.5 flex-1">
+            <Text
+              className="text-body"
+              style={{ color: quote.payment_link ? C.accent : C.ink }}
+            >
+              {generando
+                ? 'Generando…'
+                : quote.payment_link
+                  ? 'Link de pago listo'
+                  : 'Generar link de pago'}
+            </Text>
+            <Text className="mt-0.5 text-caption text-faint">
+              {quote.payment_link
+                ? `Tu cliente lo ve al aceptar. Tocá para probarlo.`
+                : `Mercado Pago, con los ${money(quote.total_amount, quote.currency)} ya cargados.`}
+            </Text>
+          </View>
           <Ionicons name="chevron-forward" size={16} color={C.faint} />
         </Pressable>
       ) : null}

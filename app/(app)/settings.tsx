@@ -9,6 +9,7 @@ import { Screen, ScreenHeader } from '@/components/ui/Screen';
 import { useSession } from '@/hooks/useSession';
 import { supabase } from '@/lib/supabase';
 import { authError, friendlyError } from '@/lib/errors';
+import { guardarCredencialMP, tieneCredencialMP } from '@/services/mercadopago';
 import { C } from '@/theme/tokens';
 import type { PaymentInfo } from '@/types/db';
 
@@ -30,6 +31,11 @@ export default function Settings() {
   const [valor, setValor] = useState('');
   const [titular, setTitular] = useState('');
 
+  const [mpToken, setMpToken] = useState('');
+  const [mpConectado, setMpConectado] = useState(false);
+  const [mpGuardando, setMpGuardando] = useState(false);
+  const [mpError, setMpError] = useState<string | null>(null);
+
   const [newPassword, setNewPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordSaved, setPasswordSaved] = useState(false);
@@ -48,6 +54,27 @@ export default function Settings() {
     setValor(profile.payment_info?.valor ?? '');
     setTitular(profile.payment_info?.titular ?? '');
   }, [profile]);
+
+  // Se pregunta por un booleano: el token no se puede leer de vuelta.
+  useEffect(() => {
+    tieneCredencialMP().then(setMpConectado);
+  }, []);
+
+  const guardarMP = async () => {
+    if (!session?.user) return;
+    setMpGuardando(true);
+    setMpError(null);
+    try {
+      await guardarCredencialMP(session.user.id, mpToken);
+      setMpToken('');
+      setMpConectado(await tieneCredencialMP());
+    } catch (e) {
+      console.error('[mercadopago]', e);
+      setMpError(friendlyError(e));
+    } finally {
+      setMpGuardando(false);
+    }
+  };
 
   const save = async () => {
     if (!session?.user) return setError('Tu sesión expiró, volvé a entrar.');
@@ -234,6 +261,73 @@ export default function Settings() {
             </Text>
           </View>
         ) : null}
+
+        {/* ---------- Cobro automático con Mercado Pago ---------- */}
+        <View className="mt-10 border-t border-border pt-6">
+          <View className="flex-row items-center">
+            <Text className="flex-1 text-micro font-bold uppercase text-muted">
+              Cobro automático
+            </Text>
+            {mpConectado ? (
+              <View className="flex-row items-center">
+                <View
+                  className="mr-1.5 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: C.paid }}
+                />
+                <Text className="text-caption font-semibold" style={{ color: C.paid }}>
+                  Conectado
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          <Text className="mt-2 text-label leading-5 text-muted">
+            Con tu cuenta de Mercado Pago conectada, Lana genera el link de pago con el monto
+            exacto de cada presupuesto. Tu cliente paga de un toque, sin escribir el importe.
+          </Text>
+
+          <View className="mt-3">
+            <Input
+              value={mpToken}
+              onChangeText={setMpToken}
+              placeholder={mpConectado ? 'Pegá otro token para reemplazarlo' : 'APP_USR-… o TEST-…'}
+              password
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          <Text className="mt-1.5 text-caption leading-4 text-faint">
+            Es el Access Token de tu aplicación en Mercado Pago → Tus integraciones → Credenciales.
+            Empezá con las de prueba: con las de producción cada link cobra plata de verdad.
+          </Text>
+
+          <Pressable
+            onPress={guardarMP}
+            disabled={!mpToken.trim() || mpGuardando}
+            hitSlop={8}
+            accessibilityRole="button"
+            className="mt-3 self-start active:opacity-60"
+          >
+            <Text
+              className="text-label font-bold"
+              style={{ color: mpToken.trim() ? C.accent : C.faint }}
+            >
+              {mpGuardando ? 'Guardando…' : mpConectado ? 'Reemplazar token' : 'Conectar cuenta'}
+            </Text>
+          </Pressable>
+
+          {mpError ? (
+            <Text className="mt-2 text-caption leading-4" style={{ color: C.danger }}>
+              {mpError}
+            </Text>
+          ) : null}
+
+          <Text className="mt-3 text-caption leading-4 text-faint">
+            Por seguridad el token no se puede volver a leer desde la app, ni siquiera por vos:
+            sólo lo usa el servidor al generar un link.
+          </Text>
+        </View>
 
         {/* ---------- Cuenta ---------- */}
         <View className="mt-10 border-t border-border pt-6">
