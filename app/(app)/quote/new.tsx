@@ -16,6 +16,7 @@ import { Screen, ScreenHeader } from '@/components/ui/Screen';
 import { useClients } from '@/hooks/useClients';
 import { useSession } from '@/hooks/useSession';
 import { createQuote, sendQuote } from '@/services/quotes';
+import { friendlyError } from '@/lib/errors';
 import { C } from '@/theme/tokens';
 
 type Errors = { client?: string | null; items?: string | null };
@@ -75,7 +76,9 @@ export default function NewQuote() {
 
       router.back();
     } catch (e) {
-      setFailure(e instanceof Error ? e.message : 'No pudimos guardar el presupuesto.');
+      // El objeto completo a la consola; el texto util, a la pantalla.
+      console.error('[presupuesto]', e);
+      setFailure(friendlyError(e));
     } finally {
       setBusy(null);
     }

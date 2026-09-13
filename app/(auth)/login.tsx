@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Screen } from '@/components/ui/Screen';
 import { supabase } from '@/lib/supabase';
+import { friendlyError } from '@/lib/errors';
 import { C } from '@/theme/tokens';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -62,7 +63,8 @@ export default function Login() {
         setError('No pudimos completar el ingreso con Google.');
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No pudimos completar el ingreso con Google.');
+      console.error('[login google]', e);
+      setError(friendlyError(e));
     } finally {
       setBusy(null);
     }
