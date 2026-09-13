@@ -57,6 +57,23 @@ type HtmlOptions = {
 };
 
 /**
+ * Sólo lo que el documento necesita. Así la misma plantilla sirve tanto
+ * para el dueño (que tiene la fila completa) como para la página pública
+ * (que recibe un puñado de campos por RPC, sin ids ni datos internos).
+ */
+export type QuoteForDoc = Pick<
+  QuoteWithClient,
+  'number' | 'items' | 'total_amount' | 'currency' | 'notes' | 'valid_until' | 'created_at'
+> & {
+  client_name: string;
+  client_whatsapp?: string | null;
+};
+
+export type BusinessForDoc = Pick<User, 'business_name' | 'logo_url' | 'payment_info'> & {
+  email: string;
+};
+
+/**
  * Plantilla del presupuesto.
  *
  * Va en claro aunque la app sea oscura: esto lo imprime y lo archiva el
@@ -65,8 +82,8 @@ type HtmlOptions = {
  * sobre texto negro tiene contraste de sobra.
  */
 export function buildQuoteHtml(
-  quote: QuoteWithClient,
-  user: User,
+  quote: QuoteForDoc,
+  user: BusinessForDoc,
   { whatsappUrl }: HtmlOptions = {},
 ): string {
   const rows = quote.items

@@ -15,7 +15,10 @@ function AuthGate() {
   useEffect(() => {
     if (loading) return;
     const inAuth = segments[0] === '(auth)';
-    if (!session && !inAuth) router.replace('/login');
+    // /q/<token> lo abre el cliente del usuario, que nunca va a tener cuenta.
+    const isPublic = segments[0] === 'q';
+
+    if (!session && !inAuth && !isPublic) router.replace('/login');
     if (session && inAuth) router.replace('/');
   }, [session, loading, segments]);
 
@@ -37,6 +40,7 @@ function AuthGate() {
     >
       <Stack.Screen name="(app)" />
       <Stack.Screen name="(auth)" />
+      <Stack.Screen name="q/[token]" />
     </Stack>
   );
 }

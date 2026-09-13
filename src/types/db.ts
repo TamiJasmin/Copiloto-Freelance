@@ -48,6 +48,8 @@ export type Quote = {
   status: QuoteStatus;
   notes: string | null;
   pdf_url: string | null;
+  /** Identificador del link publico. Lo genera la base. */
+  share_token: string;
   valid_until: string | null;
   sent_at: string | null;
   paid_at: string | null;

@@ -15,6 +15,9 @@ services:
         sync: false
       - key: EXPO_PUBLIC_SUPABASE_ANON_KEY
         sync: false
+      # Base de los links publicos de presupuesto que se mandan por WhatsApp.
+      - key: EXPO_PUBLIC_APP_URL
+        sync: false
 
     routes:
       # SPA: cualquier ruta la resuelve el router en el cliente.

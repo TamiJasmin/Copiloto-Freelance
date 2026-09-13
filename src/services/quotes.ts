@@ -1,7 +1,6 @@
-import { Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
-import { buildQuoteHtml, generateAndUpload, openQuoteWindow } from '@/services/pdf';
-import { openWhatsApp, quoteMessage, whatsappUrl } from '@/services/whatsapp';
+import { quoteShareUrl } from '@/lib/share';
+import { openWhatsApp, quoteMessage } from '@/services/whatsapp';
 import type { QuoteItem, QuoteStatus, QuoteWithClient, User } from '@/types/db';
 
 type CreateArgs = {
@@ -60,22 +59,16 @@ export async function createQuote({
  * puede congelar el JS, y es preferible un presupuesto marcado como enviado
  * que el usuario no mandó, a uno mandado que sigue figurando como borrador.
  */
-export async function sendQuote(quote: QuoteWithClient, profile: User): Promise<void> {
-  if (Platform.OS === 'web') {
-    // En el navegador no hay forma de producir un archivo para subir al
-    // Storage, así que el presupuesto se abre en su propia ventana con la
-    // plantilla real: desde ahí se descarga el PDF y se envía por WhatsApp.
-    // Una sola ventana, en el gesto del usuario, sin pelearse con el
-    // bloqueador de pop-ups.
-    const url = whatsappUrl(quote.client_whatsapp, quoteMessage(quote, ''));
-    openQuoteWindow(buildQuoteHtml(quote, profile, { whatsappUrl: url }));
-    await supabase.from('quotes').update({ status: 'enviado' }).eq('id', quote.id);
-    return;
-  }
+export async function sendQuote(quote: QuoteWithClient, _profile: User): Promise<void> {
+  // El mensaje lleva un link a la página pública del presupuesto, no un
+  // archivo: wa.me no puede adjuntar nada, y un link funciona igual en
+  // web, iOS y Android sin depender del motor de impresión del dispositivo.
+  const link = quoteShareUrl(quote.share_token);
 
-  const { signedUrl } = await generateAndUpload(quote, profile);
-
+  // El estado se marca ANTES de salir a WhatsApp: irse de la app puede
+  // congelar el JS, y es preferible un falso "enviado" a un presupuesto
+  // mandado que sigue figurando como borrador.
   await supabase.from('quotes').update({ status: 'enviado' }).eq('id', quote.id);
 
-  await openWhatsApp(quote.client_whatsapp, quoteMessage(quote, signedUrl));
+  await openWhatsApp(quote.client_whatsapp, quoteMessage(quote, link));
 }

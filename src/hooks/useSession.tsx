@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@/types/db';
@@ -7,6 +14,8 @@ type Ctx = {
   session: Session | null;
   profile: User | null;
   loading: boolean;
+  /** Relee el perfil: se llama después de editar "Mi negocio". */
+  refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -14,6 +23,7 @@ const SessionContext = createContext<Ctx>({
   session: null,
   profile: null,
   loading: true,
+  refreshProfile: async () => {},
   signOut: async () => {},
 });
 
@@ -31,22 +41,29 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!session?.user) {
+  const refreshProfile = useCallback(async () => {
+    const id = session?.user?.id;
+    if (!id) {
       setProfile(null);
       return;
     }
-    supabase
-      .from('users')
-      .select('*')
-      .eq('id', session.user.id)
-      .single<User>()
-      .then(({ data }) => setProfile(data));
+    const { data } = await supabase.from('users').select('*').eq('id', id).single<User>();
+    setProfile(data);
   }, [session?.user?.id]);
+
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
 
   return (
     <SessionContext.Provider
-      value={{ session, profile, loading, signOut: async () => void supabase.auth.signOut() }}
+      value={{
+        session,
+        profile,
+        loading,
+        refreshProfile,
+        signOut: async () => void supabase.auth.signOut(),
+      }}
     >
       {children}
     </SessionContext.Provider>

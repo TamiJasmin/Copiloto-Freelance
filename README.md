@@ -121,16 +121,18 @@ El acento significa una sola cosa en toda la app: *plata que entró*.
 - [x] Recordatorio de cobro por WhatsApp desde cada fila
 - [x] Servicio de PDF (plantilla + subida + link firmado)
 - [x] Creador de presupuestos express (cliente + ítems + enviar)
+- [x] Pantalla "Mi negocio" (nombre, logo, CBU/alias)
+- [x] Link publico del presupuesto (/q/<token>)
 - [ ] Detalle de presupuesto y cambio de estado
-- [ ] Pantalla de datos del negocio
 
 ## 7. Verificado
 
 `npx tsc --noEmit` sin errores · `expo export` OK en web, iOS y Android.
 
-**Límite conocido:** en la versión web `expo-print` no puede generar un archivo
-para subir; abre el diálogo de impresión del navegador y el PDF se comparte a
-mano. El flujo completo de envío funciona en iOS y Android.
+**Sobre el envío:** `wa.me` no puede adjuntar archivos — sólo acepta texto. Por
+eso el mensaje lleva un link a `/q/<token>`, una página pública que muestra el
+presupuesto y desde la que el cliente puede guardarlo como PDF. Funciona igual
+en web, iOS y Android, sin depender del motor de impresión del dispositivo.
 
 Los parsers de base64 y de montos están probados contra casos de borde
 (longitudes 0-499 y 22 formatos de número).
