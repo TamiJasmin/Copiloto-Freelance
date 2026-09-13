@@ -8,7 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build:web": "expo export -p web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test": "node src/components/quote/items.test.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",

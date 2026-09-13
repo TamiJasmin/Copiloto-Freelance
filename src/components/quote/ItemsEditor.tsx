@@ -3,16 +3,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { C } from '@/theme/tokens';
 import { money } from '@/lib/format';
 
-/** Ítem en edición: el monto vive como string hasta que se guarda. */
+/** Ítem en edición: los números viven como string hasta que se guarda. */
 export type ItemDraft = {
   key: string;
   description: string;
+  /** Cantidad de unidades. */
+  qty: string;
+  /** Precio de UNA unidad, no el total de la línea. */
   amount: string;
 };
 
 export const emptyItem = (): ItemDraft => ({
   key: Math.random().toString(36).slice(2),
   description: '',
+  qty: '1',
   amount: '',
 });
 
@@ -49,8 +53,21 @@ export const parseAmount = (raw: string): number => {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 };
 
+/**
+ * Cantidad: entero, mínimo 1.
+ * Un campo vacío vale 1 y no 0, porque mientras se borra para reescribir
+ * el subtotal no debería desplomarse a cero.
+ */
+export const parseQty = (raw: string): number => {
+  const n = parseInt(raw.replace(/\D/g, ''), 10);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+};
+
+/** Lo que suma una línea: cantidad × precio unitario. */
+export const itemLineTotal = (i: ItemDraft): number => parseQty(i.qty) * parseAmount(i.amount);
+
 export const itemsTotal = (items: ItemDraft[]): number =>
-  items.reduce((sum, i) => sum + parseAmount(i.amount), 0);
+  items.reduce((sum, i) => sum + itemLineTotal(i), 0);
 
 type Props = {
   items: ItemDraft[];
@@ -68,9 +85,7 @@ export function ItemsEditor({ items, onChange, currency = 'ARS', error }: Props)
   return (
     <View>
       <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-micro font-bold uppercase text-muted">
-          Detalle
-        </Text>
+        <Text className="text-micro font-bold uppercase text-muted">Detalle</Text>
         <Text className="text-caption text-faint">
           {items.length} {items.length === 1 ? 'ítem' : 'ítems'}
         </Text>
@@ -79,40 +94,84 @@ export function ItemsEditor({ items, onChange, currency = 'ARS', error }: Props)
       {items.map((item, index) => (
         <View
           key={item.key}
-          className="mb-2 flex-row items-center rounded-xl border bg-surface px-4"
+          className="mb-2.5 rounded-xl border bg-surface px-4 pb-3.5 pt-1"
           style={{ borderColor: error && index === 0 ? C.danger : C.border }}
         >
-          <TextInput
-            value={item.description}
-            onChangeText={(description) => update(item.key, { description })}
-            placeholder="Descripción"
-            placeholderTextColor={C.faint}
-            selectionColor={C.accent}
-            className="h-[52px] flex-1 text-body text-ink"
-          />
+          {/* Descripción, a todo el ancho */}
+          <View className="flex-row items-center">
+            <TextInput
+              value={item.description}
+              onChangeText={(description) => update(item.key, { description })}
+              placeholder="¿Qué incluye?"
+              placeholderTextColor={C.faint}
+              selectionColor={C.accent}
+              className="h-[46px] flex-1 text-body text-ink"
+            />
+            {items.length > 1 ? (
+              <Pressable
+                onPress={() => remove(item.key)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={`Quitar ítem ${index + 1}`}
+                className="ml-2 active:opacity-60"
+              >
+                <Ionicons name="close-circle-outline" size={19} color={C.faint} />
+              </Pressable>
+            ) : null}
+          </View>
 
-          <TextInput
-            value={item.amount}
-            onChangeText={(amount) => update(item.key, { amount })}
-            placeholder="0"
-            placeholderTextColor={C.faint}
-            selectionColor={C.accent}
-            keyboardType="decimal-pad"
-            className="h-[52px] w-24 text-right text-body font-semibold text-ink"
-            style={{ fontVariant: ['tabular-nums'] }}
-          />
+          {/* Cantidad × precio unitario = subtotal.
+              Los campos van etiquetados: sin rótulo, un número suelto al
+              lado de una descripción se lee como cantidad y se cargaba el
+              precio ahí. */}
+          <View className="mt-1 flex-row items-end border-t border-border pt-3">
+            <View style={{ width: 58 }}>
+              <Text className="mb-1 text-micro font-bold uppercase text-faint">Cant.</Text>
+              <TextInput
+                value={item.qty}
+                onChangeText={(qty) => update(item.key, { qty: qty.replace(/\D/g, '') })}
+                placeholder="1"
+                placeholderTextColor={C.faint}
+                selectionColor={C.accent}
+                keyboardType="number-pad"
+                accessibilityLabel="Cantidad"
+                className="h-9 rounded-lg bg-elevated px-2.5 text-center text-body text-ink"
+                style={{ fontVariant: ['tabular-nums'] }}
+              />
+            </View>
 
-          {items.length > 1 ? (
-            <Pressable
-              onPress={() => remove(item.key)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel={`Quitar ítem ${index + 1}`}
-              className="ml-2 active:opacity-60"
-            >
-              <Ionicons name="remove-circle-outline" size={19} color={C.faint} />
-            </Pressable>
-          ) : null}
+            <Text className="mx-2 pb-2 text-label text-faint">×</Text>
+
+            <View className="flex-1">
+              <Text className="mb-1 text-micro font-bold uppercase text-faint">Precio unitario</Text>
+              <TextInput
+                value={item.amount}
+                onChangeText={(amount) => update(item.key, { amount })}
+                placeholder="0"
+                placeholderTextColor={C.faint}
+                selectionColor={C.accent}
+                keyboardType="decimal-pad"
+                accessibilityLabel="Precio unitario"
+                className="h-9 rounded-lg bg-elevated px-2.5 text-body text-ink"
+                style={{ fontVariant: ['tabular-nums'] }}
+              />
+            </View>
+
+            {/* Subtotal: cierra el círculo y hace obvio qué significa cada campo. */}
+            <View className="ml-3 items-end" style={{ minWidth: 76 }}>
+              <Text className="mb-1 text-micro font-bold uppercase text-faint">Subtotal</Text>
+              <Text
+                className="h-9 pt-1.5 text-body font-bold"
+                style={{
+                  color: itemLineTotal(item) > 0 ? C.ink : C.faint,
+                  fontVariant: ['tabular-nums'],
+                }}
+                numberOfLines={1}
+              >
+                {money(itemLineTotal(item), currency, true)}
+              </Text>
+            </View>
+          </View>
         </View>
       ))}
 

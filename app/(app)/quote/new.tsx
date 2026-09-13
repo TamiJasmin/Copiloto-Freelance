@@ -8,7 +8,9 @@ import {
   ItemsEditor,
   emptyItem,
   itemsTotal,
+  itemLineTotal,
   parseAmount,
+  parseQty,
   type ItemDraft,
 } from '@/components/quote/ItemsEditor';
 import { Button } from '@/components/ui/Button';
@@ -72,10 +74,13 @@ export default function NewQuote() {
         currency,
         total,
         items: items
-          .filter((i) => parseAmount(i.amount) > 0)
+          .filter((i) => itemLineTotal(i) > 0)
           .map((i) => ({
             description: i.description.trim() || 'Servicio',
+            // amount es el precio de UNA unidad; el total de la linea lo
+            // reconstruyen el PDF y el detalle como amount * qty.
             amount: parseAmount(i.amount),
+            qty: parseQty(i.qty),
           })),
       });
 
