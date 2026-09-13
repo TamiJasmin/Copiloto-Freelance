@@ -139,6 +139,21 @@ export function QuoteForm({ quote, plantilla }: Props) {
         validUntil,
       });
 
+      if (mode === 'send' && !abrirWhatsApp) {
+        // El navegador bloqueó la ventana emergente. NO se marca como
+        // enviado: dejarlo así sin que el mensaje haya salido es el peor
+        // resultado posible, porque el presupuesto desaparece de lo que
+        // queda por hacer y el cliente nunca se entera.
+        setFailure(
+          'Tu navegador bloqueó la ventana de WhatsApp, así que el presupuesto quedó como ' +
+            'borrador. Abrilo y tocá "Enviar por WhatsApp", o permití las ventanas emergentes ' +
+            'para este sitio.',
+        );
+        setBusy(null);
+        router.replace(`/quote/${creada.id}`);
+        return;
+      }
+
       if (abrirWhatsApp) {
         const link = quoteShareUrl(creada.share_token);
         abrirWhatsApp(creada.client_whatsapp, quoteMessage(creada, link));

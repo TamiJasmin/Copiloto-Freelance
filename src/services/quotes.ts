@@ -86,9 +86,16 @@ export function sendQuote(quote: QuoteWithClient): Promise<void> {
   return Promise.resolve();
 }
 
-/** Recordatorio de cobro, con los datos de pago si están cargados. */
+/** Recordatorio de cobro, con el link del presupuesto y los datos de pago. */
 export function remindQuote(quote: QuoteWithClient, profile: User | null): void {
-  void openWhatsApp(quote.client_whatsapp, reminderMessage(quote, profile?.payment_info));
+  // Si falta el token el recordatorio sale igual, sólo que sin link: es
+  // preferible a no poder insistirle a un cliente que te debe plata.
+  const link = quote.share_token ? quoteShareUrl(quote.share_token) : undefined;
+
+  void openWhatsApp(
+    quote.client_whatsapp,
+    reminderMessage(quote, profile?.payment_info, link),
+  );
 }
 
 /** Edita el contenido de un presupuesto. No toca el estado ni el cliente. */

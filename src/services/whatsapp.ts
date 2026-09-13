@@ -29,15 +29,19 @@ export async function openWhatsApp(phone: string | null, message: string) {
  * Abriendo una ventana en blanco de inmediato y navegándola al terminar, el
  * envío sigue siendo un solo clic.
  */
-export function reserveWhatsAppWindow(): (phone: string | null, message: string) => void {
-  const fallback = (phone: string | null, message: string) => {
-    void Linking.openURL(whatsappUrl(phone, message));
-  };
-
-  if (Platform.OS !== 'web' || typeof window === 'undefined') return fallback;
+export function reserveWhatsAppWindow(): ((phone: string | null, message: string) => void) | null {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    // En nativo no hay bloqueador: se abre cuando haga falta.
+    return (phone, message) => void Linking.openURL(whatsappUrl(phone, message));
+  }
 
   const win = window.open('', '_blank');
-  if (!win) return fallback; // Bloqueada igual: se intenta por el camino normal.
+
+  // Devuelve null, y NO un plan B silencioso. Antes se intentaba abrir igual
+  // más tarde, el navegador lo bloqueaba de nuevo y nadie se enteraba: el
+  // presupuesto quedaba marcado como enviado sin que el cliente recibiera
+  // nada. Es preferible avisar que fallar en silencio.
+  if (!win) return null;
 
   return (phone, message) => {
     win.location.href = whatsappUrl(phone, message);
@@ -65,17 +69,23 @@ export function quoteMessage(quote: QuoteWithClient, link?: string): string {
 export function reminderMessage(
   quote: QuoteWithClient,
   paymentInfo?: { tipo?: string; valor?: string },
+  link?: string,
 ): string {
   const datos =
     paymentInfo?.valor
       ? `\n\nDatos para la transferencia (${paymentInfo.tipo?.toUpperCase() ?? 'PAGO'}): ${paymentInfo.valor}`
       : '';
 
+  // El link va de nuevo: quien recibe el recordatorio puede haber perdido el
+  // mensaje original, y un "te recuerdo el presupuesto" sin forma de verlo
+  // obliga al cliente a buscarlo para poder decidir.
+  const verlo = link ? `\n\nAcá lo podés ver: ${link}` : '';
+
   return (
     `¡Hola ${firstName(quote.client_name)}! ¿Cómo va todo?\n\n` +
     `Te escribo para hacer un seguimiento del presupuesto #${quote.number} ` +
     `por ${money(quote.total_amount, quote.currency)}. ` +
-    `Cualquier duda quedo a disposición.${datos}\n\n` +
+    `Cualquier duda quedo a disposición.${verlo}${datos}\n\n` +
     `¡Gracias!`
   );
 }
