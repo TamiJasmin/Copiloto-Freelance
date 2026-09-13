@@ -4,18 +4,13 @@ import { errorMessage } from '@/lib/errors';
 /**
  * Guarda el Access Token de Mercado Pago.
  *
- * No se hace `.select()` después de escribir, y no es un olvido: la tabla no
- * tiene policy de SELECT justamente para que el token no pueda volver al
- * cliente. Pedirlo de vuelta haría fallar la operación entera.
+ * Va por una función y no por un insert directo: la tabla está cerrada a la
+ * API, sin ninguna policy. La función decide de quién es la fila a partir de
+ * la sesión, así que el cliente ni siquiera manda el user_id — no hay forma
+ * de guardar un token en la cuenta de otro.
  */
-export async function guardarCredencialMP(userId: string, token: string): Promise<void> {
-  const { error } = await supabase
-    .from('user_payment_credentials')
-    .upsert(
-      { user_id: userId, mp_access_token: token.trim() || null, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id' },
-    );
-
+export async function guardarCredencialMP(token: string): Promise<void> {
+  const { error } = await supabase.rpc('guardar_credencial_mp', { p_token: token.trim() });
   if (error) throw error;
 }
 

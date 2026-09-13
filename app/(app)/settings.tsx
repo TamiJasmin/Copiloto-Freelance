@@ -65,7 +65,7 @@ export default function Settings() {
     setMpGuardando(true);
     setMpError(null);
     try {
-      await guardarCredencialMP(session.user.id, mpToken);
+      await guardarCredencialMP(mpToken);
       setMpToken('');
       setMpConectado(await tieneCredencialMP());
     } catch (e) {
