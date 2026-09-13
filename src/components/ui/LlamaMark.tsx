@@ -1,22 +1,41 @@
 import { Image } from 'react-native';
 
 /**
- * La llama de Lana.
+ * La marca de Lana.
  *
- * El PNG viene con el trazo en blanco y el fondo transparente (lo genera
- * `npm run icons` desde LANA.png), así que se apoya sobre cualquier color
- * sin arrastrar un rectángulo negro.
+ * Dos versiones, las dos generadas por `npm run icons` desde LANA.png:
  *
- * Se respeta la proporción original —es alta y angosta— en vez de forzarla
- * a un cuadrado: estirar un dibujo hecho a mano se nota enseguida.
+ * - `llama`  : sólo el animal. Va donde el nombre ya está escrito al lado.
+ * - `lockup` : el imagotipo completo, con la palabra. Va donde la marca se
+ *              presenta sola, como el ingreso.
+ *
+ * Los PNG traen el trazo blanco sobre transparente, así que se apoyan sobre
+ * cualquier color sin arrastrar un rectángulo negro.
  */
-const RELACION = 1078 / 512; // alto / ancho del archivo generado
 
-export function LlamaMark({ height = 96 }: { height?: number }) {
+// Proporciones de los archivos generados: no se fuerzan a un cuadrado,
+// porque estirar un dibujo hecho a mano se nota enseguida.
+const RELACION = {
+  llama: 708 / 512,
+  lockup: 854 / 512,
+} as const;
+
+type Props = {
+  variant?: keyof typeof RELACION;
+  height?: number;
+};
+
+export function LlamaMark({ variant = 'llama', height = 96 }: Props) {
+  const relacion = RELACION[variant];
+
   return (
     <Image
-      source={require('../../../assets/llama.png')}
-      style={{ height, width: height / RELACION }}
+      source={
+        variant === 'lockup'
+          ? require('../../../assets/lockup.png')
+          : require('../../../assets/llama.png')
+      }
+      style={{ height, width: height / relacion }}
       resizeMode="contain"
       accessibilityLabel="Lana"
     />

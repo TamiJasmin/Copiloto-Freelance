@@ -153,8 +153,9 @@ export default function Login() {
     <Screen center>
       {/* ---------- Marca ---------- */}
       <View className="mb-8 items-center">
-        <LlamaMark height={104} />
-        <Text className="mt-4 text-title font-bold text-ink">Lana</Text>
+        {/* El imagotipo ya trae la palabra: repetirla abajo sería decir
+            "Lana" dos veces en la misma pantalla. */}
+        <LlamaMark variant="lockup" height={132} />
         <Text className="mt-2 text-center text-label text-muted">
           {entrando
             ? 'Presupuestá, mandá por WhatsApp y cobrá.'

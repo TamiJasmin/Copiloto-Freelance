@@ -116,46 +116,39 @@ function escalar(png, ancho, alto) {
 }
 
 /**
- * Aisla la cabeza: la parte alta de la figura, re-ajustada a lo ancho.
+ * Parte el logo en sus bloques, separados por bandas de filas vacías.
  *
- * La llama entera mide 380x800, casi el doble de alta que ancha. Metida en
- * un icono cuadrado solo puede ocupar un tercio del ancho, y a 48px en la
- * pantalla del telefono se convierte en una astilla ilegible. La cabeza
- * sola llena el cuadrado y es lo que se reconoce de un vistazo.
+ * El archivo es un imagotipo: la llama arriba y la palabra LANA abajo,
+ * con 35px de aire en el medio. Para los íconos hace falta sólo la llama,
+ * porque a 48px en la pantalla de un teléfono la palabra es una mancha.
+ * Detectar la banda vacía es más robusto que cortar por un porcentaje:
+ * si mañana cambia la proporción del dibujo, sigue funcionando.
  */
-function cabeza(figura) {
-  // Ancho de trazo por fila. La cabeza es ancha; el cuello, angosto.
-  const anchoPorFila = [];
-  for (let y = 0; y < figura.height; y++) {
-    let a = figura.width;
-    let b = -1;
+function bloques(figura) {
+  const vacia = (y) => {
     for (let x = 0; x < figura.width; x++) {
-      if (figura.data[((figura.width * y + x) << 2) + 3] < 10) continue;
-      if (x < a) a = x;
-      if (x > b) b = x;
+      if (figura.data[((figura.width * y + x) << 2) + 3] >= 10) return false;
     }
-    anchoPorFila.push(b < 0 ? 0 : b - a + 1);
-  }
+    return true;
+  };
 
-  // El cuello es el punto MÁS ANGOSTO de la zona media, no una fila que
-  // baje de cierto umbral: en este dibujo el cuello mide el 61% del ancho
-  // de la cabeza, así que cualquier umbral razonable lo pasaba de largo.
-  // Buscar el mínimo no depende de calibrar un número.
-  const desde = Math.floor(figura.height * 0.4);
-  const hasta = Math.floor(figura.height * 0.7);
-
-  let alto = desde;
-  let masAngosto = Infinity;
-  for (let y = desde; y < hasta; y++) {
-    if (anchoPorFila[y] < masAngosto) {
-      masAngosto = anchoPorFila[y];
-      alto = y;
+  const cortes = [];
+  let inicio = 0;
+  for (let y = 0; y <= figura.height; y++) {
+    if (y === figura.height || vacia(y)) {
+      if (y > inicio) cortes.push([inicio, y - 1]);
+      inicio = y + 1;
     }
   }
 
+  return cortes.map(([y0, y1]) => recorteVertical(figura, y0, y1 - y0 + 1));
+}
+
+/** Toma una franja de filas y la re-ajusta a lo ancho del contenido. */
+function recorteVertical(figura, desdeY, alto) {
   let x0 = figura.width;
   let x1 = -1;
-  for (let y = 0; y < alto; y++) {
+  for (let y = desdeY; y < desdeY + alto; y++) {
     for (let x = 0; x < figura.width; x++) {
       if (figura.data[((figura.width * y + x) << 2) + 3] < 10) continue;
       if (x < x0) x0 = x;
@@ -166,7 +159,7 @@ function cabeza(figura) {
   const out = new PNG({ width: w, height: alto });
   for (let y = 0; y < alto; y++) {
     for (let x = 0; x < w; x++) {
-      const s = (figura.width * y + (x + x0)) << 2;
+      const s = (figura.width * (y + desdeY) + (x + x0)) << 2;
       const d = (w * y + x) << 2;
       out.data[d] = figura.data[s];
       out.data[d + 1] = figura.data[s + 1];
@@ -176,7 +169,6 @@ function cabeza(figura) {
   }
   return out;
 }
-
 /** Pone la figura centrada en un lienzo, ocupando `proporcion` del lado. */
 function lienzo(figura, lado, proporcion, fondo) {
   const out = new PNG({ width: lado, height: lado });
@@ -243,23 +235,39 @@ const caja = recortar(original);
 console.log(`Original ${original.width}x${original.height}`);
 console.log(`Recorte  ${caja.w}x${caja.h} (la llama ocupaba el ${Math.round((caja.w / original.width) * 100)}% del ancho)\n`);
 
-const llama = aTransparente(original, caja);
+const completo = aTransparente(original, caja);
+const partes = bloques(completo);
 
-// La marca suelta: fondo transparente, para apoyarla donde sea.
-guardar(escalar(llama, 512, Math.round((512 * llama.height) / llama.width)), 'llama.png');
+if (partes.length < 2) {
+  console.error(
+    `Se esperaba un imagotipo de dos bloques (llama + palabra) y se encontraron ${partes.length}.\n` +
+      'Si el logo cambió de estructura, revisá el corte antes de publicar los íconos.',
+  );
+  process.exit(1);
+}
 
-// Para los íconos va sólo la cabeza: llena el cuadrado y se reconoce chica.
-const rostro = cabeza(llama);
-console.log(`Cabeza   ${rostro.width}x${rostro.height}\n`);
+const [marca, palabra] = partes;
+console.log(`Llama    ${marca.width}x${marca.height}`);
+console.log(`Palabra  ${palabra.width}x${palabra.height}\n`);
 
-// Ícono de tienda: fondo opaco, porque iOS no admite transparencia.
-guardar(lienzo(rostro, 1024, 0.68, FONDO), 'icon.png');
+const ratio = (p) => Math.round((512 * p.height) / p.width);
+
+// La llama sola: para los íconos y para donde ya haya un título al lado.
+guardar(escalar(marca, 512, ratio(marca)), 'llama.png');
+
+// El imagotipo completo: para el ingreso y la pantalla de carga, donde hay
+// lugar para que la marca se presente entera.
+guardar(escalar(completo, 512, ratio(completo)), 'lockup.png');
+
+// Ícono de tienda: fondo opaco, porque iOS no admite transparencia. Va sólo
+// la llama: a 48px la palabra sería una mancha ilegible.
+guardar(lienzo(marca, 1024, 0.68, FONDO), 'icon.png');
 
 // Android recorta a círculo o squircle: la figura va más chica para que no
 // le corten las orejas.
-guardar(lienzo(rostro, 1024, 0.5, null), 'adaptive-icon.png');
+guardar(lienzo(marca, 1024, 0.5, null), 'adaptive-icon.png');
 
-guardar(lienzo(llama, 1284, 0.34, FONDO), 'splash.png');
-guardar(lienzo(rostro, 64, 0.82, FONDO), 'favicon.png');
+guardar(lienzo(completo, 1284, 0.42, FONDO), 'splash.png');
+guardar(lienzo(marca, 64, 0.82, FONDO), 'favicon.png');
 
 console.log('\nListo. Los íconos están en assets/');
