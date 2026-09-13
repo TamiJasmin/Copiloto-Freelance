@@ -21,20 +21,20 @@ export function QuoteRow({ quote, onPress, onRemind }: Props) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Presupuesto de ${quote.client_name} por ${money(quote.total_amount, quote.currency)}`}
-      className="mb-2.5 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 active:bg-elevated"
+      className="mb-2 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 active:bg-elevated"
     >
       <View className="flex-1 pr-3">
-        <Text className="text-[15px] font-semibold text-ink" numberOfLines={1}>
+        <Text className="text-body font-semibold text-ink" numberOfLines={1}>
           {quote.client_name}
         </Text>
         <View className="mt-2 flex-row items-center">
           <StatusPill status={quote.status} />
-          <Text className="ml-2 text-[12px] text-faint">{relativeDay(quote.created_at)}</Text>
+          <Text className="ml-2 text-caption text-faint">{relativeDay(quote.created_at)}</Text>
         </View>
       </View>
 
       <Text
-        className="text-[15px] font-bold text-ink"
+        className="text-body font-bold text-ink"
         style={{ fontVariant: ['tabular-nums'] }}
         numberOfLines={1}
       >

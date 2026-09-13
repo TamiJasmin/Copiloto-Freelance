@@ -68,10 +68,10 @@ export function ItemsEditor({ items, onChange, currency = 'ARS', error }: Props)
   return (
     <View>
       <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-[12px] font-semibold uppercase tracking-wider text-muted">
+        <Text className="text-micro font-bold uppercase text-muted">
           Detalle
         </Text>
-        <Text className="text-[12px] text-faint">
+        <Text className="text-caption text-faint">
           {items.length} {items.length === 1 ? 'ítem' : 'ítems'}
         </Text>
       </View>
@@ -88,7 +88,7 @@ export function ItemsEditor({ items, onChange, currency = 'ARS', error }: Props)
             placeholder="Descripción"
             placeholderTextColor={C.faint}
             selectionColor={C.accent}
-            className="h-14 flex-1 text-[15px] text-ink"
+            className="h-[52px] flex-1 text-body text-ink"
           />
 
           <TextInput
@@ -98,7 +98,7 @@ export function ItemsEditor({ items, onChange, currency = 'ARS', error }: Props)
             placeholderTextColor={C.faint}
             selectionColor={C.accent}
             keyboardType="decimal-pad"
-            className="h-14 w-24 text-right text-[15px] font-semibold text-ink"
+            className="h-[52px] w-24 text-right text-body font-semibold text-ink"
             style={{ fontVariant: ['tabular-nums'] }}
           />
 
@@ -117,7 +117,7 @@ export function ItemsEditor({ items, onChange, currency = 'ARS', error }: Props)
       ))}
 
       {error ? (
-        <Text className="mb-2 text-[12px]" style={{ color: C.danger }}>
+        <Text className="mb-2 text-caption" style={{ color: C.danger }}>
           {error}
         </Text>
       ) : null}
@@ -129,14 +129,14 @@ export function ItemsEditor({ items, onChange, currency = 'ARS', error }: Props)
         className="h-12 flex-row items-center justify-center rounded-xl border border-dashed border-border active:opacity-60"
       >
         <Ionicons name="add" size={17} color={C.muted} />
-        <Text className="ml-1.5 text-[14px] font-semibold text-muted">Agregar ítem</Text>
+        <Text className="ml-1.5 text-label font-semibold text-muted">Agregar ítem</Text>
       </Pressable>
 
       {/* Total: siempre visible, siempre en acento. */}
       <View className="mt-5 flex-row items-baseline justify-between border-t border-border pt-4">
-        <Text className="text-[15px] font-semibold text-muted">Total</Text>
+        <Text className="text-body font-semibold text-muted">Total</Text>
         <Text
-          className="text-[26px] font-bold text-accent"
+          className="text-title font-bold text-accent"
           style={{ fontVariant: ['tabular-nums'] }}
         >
           {money(itemsTotal(items), currency)}

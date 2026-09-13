@@ -1,13 +1,5 @@
 import { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -20,6 +12,7 @@ import {
   type ItemDraft,
 } from '@/components/quote/ItemsEditor';
 import { Button } from '@/components/ui/Button';
+import { Screen, ScreenHeader } from '@/components/ui/Screen';
 import { useClients } from '@/hooks/useClients';
 import { useSession } from '@/hooks/useSession';
 import { createQuote, sendQuote } from '@/services/quotes';
@@ -46,9 +39,7 @@ export default function NewQuote() {
     if (!client.id && client.name.trim().length < 2) {
       next.client = 'Elegí un cliente o escribí un nombre';
     }
-    if (total <= 0) {
-      next.items = 'Cargá al menos un ítem con monto';
-    }
+    if (total <= 0) next.items = 'Cargá al menos un ítem con monto';
     setErrors(next);
     return !next.client && !next.items;
   };
@@ -91,66 +82,29 @@ export default function NewQuote() {
   };
 
   return (
-    <View className="flex-1 bg-bg">
-      <SafeAreaView className="flex-1" edges={['top']}>
-        {/* ---------- Header ---------- */}
-        <View className="flex-row items-center justify-between px-5 pb-5 pt-2">
-          <Text className="text-[22px] font-bold tracking-tight text-ink">Nuevo Presupuesto</Text>
-          <Pressable
-            onPress={() => router.back()}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar"
-            className="h-10 w-10 items-center justify-center rounded-full bg-surface active:opacity-70"
-          >
-            <Ionicons name="close" size={20} color={C.muted} />
-          </Pressable>
-        </View>
-
-        <KeyboardAvoidingView
-          className="flex-1"
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={90}
-        >
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            <ClientPicker
-              clients={clients}
-              value={client}
-              onChange={(c) => {
-                setClient(c);
-                if (errors.client) setErrors((e) => ({ ...e, client: null }));
-              }}
-              error={errors.client}
-            />
-
-            <View className="mt-7">
-              <ItemsEditor
-                items={items}
-                onChange={(i) => {
-                  setItems(i);
-                  if (errors.items) setErrors((e) => ({ ...e, items: null }));
-                }}
-                currency={currency}
-                error={errors.items}
-              />
-            </View>
-
-            {failure ? (
-              <View className="mt-5 rounded-xl border border-border bg-surface px-4 py-3.5">
-                <Text className="text-[13px] leading-5" style={{ color: C.danger }}>
-                  {failure}
-                </Text>
-              </View>
-            ) : null}
-          </ScrollView>
-
-          {/* ---------- Acciones ---------- */}
-          <View className="border-t border-border px-5 pb-8 pt-4" style={{ backgroundColor: C.bg }}>
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <Screen
+        header={
+          <ScreenHeader
+            title="Nuevo Presupuesto"
+            action={
+              <Pressable
+                onPress={() => router.back()}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Cerrar"
+                className="h-10 w-10 items-center justify-center rounded-full bg-surface active:opacity-70"
+              >
+                <Ionicons name="close" size={19} color={C.muted} />
+              </Pressable>
+            }
+          />
+        }
+        footer={
+          <>
             <Button
               label="Generar PDF y Enviar"
               icon="logo-whatsapp"
@@ -163,15 +117,45 @@ export default function NewQuote() {
               disabled={busy !== null}
               hitSlop={8}
               accessibilityRole="button"
-              className="mt-4 items-center active:opacity-60"
+              className="mt-3.5 items-center active:opacity-60"
             >
-              <Text className="text-[14px] font-semibold text-muted">
+              <Text className="text-label font-semibold text-muted">
                 {busy === 'draft' ? 'Guardando…' : 'Guardar como borrador'}
               </Text>
             </Pressable>
+          </>
+        }
+      >
+        <ClientPicker
+          clients={clients}
+          value={client}
+          onChange={(c) => {
+            setClient(c);
+            if (errors.client) setErrors((e) => ({ ...e, client: null }));
+          }}
+          error={errors.client}
+        />
+
+        <View className="mt-7">
+          <ItemsEditor
+            items={items}
+            onChange={(i) => {
+              setItems(i);
+              if (errors.items) setErrors((e) => ({ ...e, items: null }));
+            }}
+            currency={currency}
+            error={errors.items}
+          />
+        </View>
+
+        {failure ? (
+          <View className="mt-5 rounded-xl border border-border bg-surface px-4 py-3">
+            <Text className="text-label leading-5" style={{ color: C.danger }}>
+              {failure}
+            </Text>
           </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+        ) : null}
+      </Screen>
+    </KeyboardAvoidingView>
   );
 }

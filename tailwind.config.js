@@ -28,11 +28,22 @@ module.exports = {
         danger: '#FF5C5C',
       },
       borderRadius: {
-        xl: '18px',
-        '2xl': '24px',
+        xl: '16px',
+        '2xl': '22px',
       },
+      /**
+       * Escala tipográfica cerrada. Siete pasos, ni uno más: si hace falta
+       * un tamaño nuevo, primero hay que justificar por qué la jerarquía
+       * actual no alcanza. Evita el desorden de píxeles sueltos.
+       */
       fontSize: {
-        display: ['34px', { lineHeight: '38px', letterSpacing: '-1px' }],
+        micro: ['11px', { lineHeight: '14px', letterSpacing: '0.6px' }],
+        caption: ['12px', { lineHeight: '16px' }],
+        label: ['13px', { lineHeight: '18px' }],
+        body: ['15px', { lineHeight: '21px' }],
+        heading: ['17px', { lineHeight: '22px', letterSpacing: '-0.2px' }],
+        title: ['21px', { lineHeight: '26px', letterSpacing: '-0.5px' }],
+        display: ['36px', { lineHeight: '40px', letterSpacing: '-1.4px' }],
       },
     },
   },

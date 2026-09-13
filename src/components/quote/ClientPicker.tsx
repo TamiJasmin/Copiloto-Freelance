@@ -44,7 +44,7 @@ export function ClientPicker({ clients, value, onChange, error }: Props) {
 
   return (
     <View>
-      <Text className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-muted">
+      <Text className="mb-2 text-micro font-bold uppercase text-muted">
         Cliente
       </Text>
 
@@ -54,19 +54,19 @@ export function ClientPicker({ clients, value, onChange, error }: Props) {
           onPress={clear}
           accessibilityRole="button"
           accessibilityLabel={`Cliente ${value.name}. Tocar para cambiar`}
-          className="h-14 flex-row items-center rounded-xl border border-border bg-surface px-4 active:opacity-70"
+          className="h-[52px] flex-row items-center rounded-xl border border-border bg-surface px-4 active:opacity-70"
         >
           <View className="h-8 w-8 items-center justify-center rounded-full bg-elevated">
-            <Text className="text-[13px] font-bold text-muted">
+            <Text className="text-label font-bold text-muted">
               {value.name.trim().charAt(0).toUpperCase()}
             </Text>
           </View>
           <View className="ml-3 flex-1">
-            <Text className="text-[15px] font-semibold text-ink" numberOfLines={1}>
+            <Text className="text-body font-semibold text-ink" numberOfLines={1}>
               {value.name}
             </Text>
             {value.whatsapp ? (
-              <Text className="text-[12px] text-faint">+{value.whatsapp}</Text>
+              <Text className="text-caption text-faint">+{value.whatsapp}</Text>
             ) : null}
           </View>
           <Ionicons name="close-circle" size={19} color={C.faint} />
@@ -97,11 +97,11 @@ export function ClientPicker({ clients, value, onChange, error }: Props) {
                     i > 0 ? 'border-t border-border' : '',
                   ].join(' ')}
                 >
-                  <Text className="flex-1 text-[15px] text-ink" numberOfLines={1}>
+                  <Text className="flex-1 text-body text-ink" numberOfLines={1}>
                     {c.name}
                   </Text>
                   {c.whatsapp_number ? (
-                    <Text className="text-[12px] text-faint">+{c.whatsapp_number}</Text>
+                    <Text className="text-caption text-faint">+{c.whatsapp_number}</Text>
                   ) : null}
                 </Pressable>
               ))}
@@ -112,7 +112,7 @@ export function ClientPicker({ clients, value, onChange, error }: Props) {
             <View className="mt-3">
               <View className="mb-2 flex-row items-center">
                 <Ionicons name="sparkles-outline" size={13} color={C.accent} />
-                <Text className="ml-1.5 text-[12px] font-semibold text-accent">
+                <Text className="ml-1.5 text-caption font-semibold text-accent">
                   Cliente nuevo — falta el WhatsApp
                 </Text>
               </View>

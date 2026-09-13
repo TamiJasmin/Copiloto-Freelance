@@ -11,7 +11,7 @@ export function StatusPill({ status }: { status: QuoteStatus }) {
       style={{ backgroundColor: meta.chipBg }}
     >
       <View className="mr-1.5 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
-      <Text className="text-[11px] font-semibold" style={{ color: meta.color }}>
+      <Text className="text-micro font-bold" style={{ color: meta.color }}>
         {meta.label}
       </Text>
     </View>
