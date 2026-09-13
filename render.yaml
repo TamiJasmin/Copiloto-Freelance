@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: copiloto-freelance
+    runtime: static
+    buildCommand: npm ci && npx expo export -p web
+    staticPublishPath: ./dist
+
+    envVars:
+      # Expo SDK 53 no soporta Node 24; Render usa 22 por defecto.
+      - key: NODE_VERSION
+        value: 20.18.0
+      # Se cargan a mano en el dashboard de Render (Environment).
+      # La anon key es pública por diseño: lo que protege los datos es la RLS.
+      - key: EXPO_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: EXPO_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+
+    routes:
+      # SPA: cualquier ruta la resuelve el router en el cliente.
+      # Sin esto, recargar en /login o /quote/new devuelve 404.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+    headers:
+      # Los bundles llevan hash en el nombre: se pueden cachear para siempre.
+      - path: /_expo/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable

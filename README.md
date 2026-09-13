@@ -36,7 +36,37 @@ supabase db push
 - **Google**: Authentication → Providers → Google. Agregar como *Redirect URL*
   `copiloto://auth/callback` (nativo) y `http://localhost:8081` (web).
 
-## 3. Arquitectura
+## 3. Deploy en Render (PWA)
+
+Es un **Static Site**, no un Web Service: no hay servidor que arrancar.
+
+| Campo | Valor |
+|---|---|
+| Build Command | `npm ci && npx expo export -p web` |
+| Publish Directory | `dist` |
+
+Variables de entorno:
+
+```
+NODE_VERSION                   20.18.0   # Expo SDK 53 no soporta Node 22+
+EXPO_PUBLIC_SUPABASE_URL       https://<ref>.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY  eyJhbGci...
+```
+
+Y una regla de rewrite `/*` → `/index.html`, sin la cual recargar en
+cualquier ruta que no sea la raíz devuelve 404.
+
+Todo eso está en [`render.yaml`](render.yaml): con **New → Blueprint**
+queda configurado solo y únicamente pide las dos claves de Supabase.
+
+Después del primer deploy, en Supabase → Authentication → URL Configuration
+hay que agregar la URL de Render como *Site URL* y como *Redirect URL*, o el
+magic link y Google no vuelven a la app.
+
+> La anon key viaja en el bundle del cliente. Es así por diseño: lo que
+> protege los datos es la RLS, no el secreto de esa clave.
+
+## 4. Arquitectura
 
 ```
 app/                          Rutas (expo-router, file-based)
@@ -69,7 +99,7 @@ supabase/migrations/          Esquema SQL
 los espeja para lo que Tailwind no alcanza (iconos, sombras, StatusBar).
 Si cambiás uno, cambiá el otro.
 
-## 4. Sistema de diseño
+## 5. Sistema de diseño
 
 | Rol | Token | Hex |
 |---|---|---|
@@ -83,7 +113,7 @@ Si cambiás uno, cambiá el otro.
 Estados: borrador gris · enviado ámbar · aprobado azul · **cobrado = acento**.
 El acento significa una sola cosa en toda la app: *plata que entró*.
 
-## 5. Estado del MVP
+## 6. Estado del MVP
 
 - [x] Auth (email + Google) con portero de rutas
 - [x] Esquema, RLS y RPC de totales
@@ -94,7 +124,7 @@ El acento significa una sola cosa en toda la app: *plata que entró*.
 - [ ] Detalle de presupuesto y cambio de estado
 - [ ] Pantalla de datos del negocio
 
-## 6. Verificado
+## 7. Verificado
 
 `npx tsc --noEmit` sin errores · `expo export` OK en web, iOS y Android.
 
