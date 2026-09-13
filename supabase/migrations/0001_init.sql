@@ -1,5 +1,5 @@
 -- ============================================================
--- Copiloto Freelance — Esquema inicial
+-- Lana — Esquema inicial
 -- Postgres 15 / Supabase
 -- ============================================================
 

@@ -277,7 +277,7 @@ ${toolbar}
 
   <footer>
     <span>${esc(user.business_name ?? '')}</span>
-    <span>Generado con Copiloto Freelance</span>
+    <span>Hecho con Lana</span>
   </footer>
 </div>
 </body></html>`;

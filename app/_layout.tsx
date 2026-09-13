@@ -3,6 +3,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SessionProvider, useSession } from '@/hooks/useSession';
+import { applyWebHead } from '@/lib/webHead';
 import { C } from '@/theme/tokens';
 import '../global.css';
 
@@ -46,6 +47,11 @@ function AuthGate() {
 }
 
 export default function RootLayout() {
+  // El <head> de web se completa acá: es el único punto que corre siempre.
+  useEffect(() => {
+    applyWebHead();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <SessionProvider>

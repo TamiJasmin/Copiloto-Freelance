@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: copiloto-freelance
+    name: lana
     runtime: static
     buildCommand: npm ci && npx expo export -p web
     staticPublishPath: ./dist

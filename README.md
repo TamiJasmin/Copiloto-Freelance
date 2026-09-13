@@ -1,4 +1,4 @@
-# Copiloto Freelance
+# 🐑 Lana
 
 CRM ultra-simplificado + gestor de cobros para freelancers y micro-negocios.
 Presupuestar, mandar por WhatsApp y cobrar — en menos de 3 toques.
@@ -34,7 +34,7 @@ supabase db push
 
 - **Email**: magic link, activo por defecto.
 - **Google**: Authentication → Providers → Google. Agregar como *Redirect URL*
-  `copiloto://auth/callback` (nativo) y `http://localhost:8081` (web).
+  `lana://auth/callback` (nativo) y `http://localhost:8081` (web).
 
 ## 3. Deploy en Render (PWA)
 

@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "Copiloto Freelance",
-    "slug": "copiloto-freelance",
-    "scheme": "copiloto",
+    "name": "Lana",
+    "slug": "lana",
+    "scheme": "lana",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0A0A0B",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.copiloto.freelance"
+      "bundleIdentifier": "com.lana.app"
     },
     "android": {
-      "package": "com.copiloto.freelance"
+      "package": "com.lana.app"
     },
     "web": {
       "bundler": "metro",

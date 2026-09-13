@@ -4,6 +4,8 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
 
+import { SheepMark } from '@/components/ui/SheepMark';
+
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Screen } from '@/components/ui/Screen';
@@ -151,10 +153,10 @@ export default function Login() {
     <Screen center>
       {/* ---------- Marca ---------- */}
       <View className="mb-8 items-center">
-        <View className="mb-5 h-14 w-14 items-center justify-center rounded-2xl bg-accent">
-          <Ionicons name="flash" size={26} color={C.bg} />
+        <View className="mb-5 h-16 w-16 items-center justify-center rounded-2xl bg-accent">
+          <SheepMark size={40} />
         </View>
-        <Text className="text-title font-bold text-ink">Copiloto Freelance</Text>
+        <Text className="text-title font-bold text-ink">Lana</Text>
         <Text className="mt-2 text-center text-label text-muted">
           {entrando
             ? 'Presupuestá, mandá por WhatsApp y cobrá.'
