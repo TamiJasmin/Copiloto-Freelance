@@ -123,7 +123,9 @@ El acento significa una sola cosa en toda la app: *plata que entró*.
 - [x] Creador de presupuestos express (cliente + ítems + enviar)
 - [x] Pantalla "Mi negocio" (nombre, logo, CBU/alias)
 - [x] Link publico del presupuesto (/q/<token>)
-- [ ] Detalle de presupuesto y cambio de estado
+- [x] Detalle de presupuesto, cambio de estado y cobranza
+- [x] Historial con busqueda y filtros
+- [x] Modulo de clientes con estados derivados
 
 ## 7. Verificado
 

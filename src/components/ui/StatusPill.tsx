@@ -1,9 +1,8 @@
 import { Text, View } from 'react-native';
-import { STATUS_META } from '@/theme/tokens';
-import type { QuoteStatus } from '@/types/db';
+import { VIEW_META, type QuoteView } from '@/lib/quoteState';
 
-export function StatusPill({ status }: { status: QuoteStatus }) {
-  const meta = STATUS_META[status];
+export function StatusPill({ view }: { view: QuoteView }) {
+  const meta = VIEW_META[view];
 
   return (
     <View

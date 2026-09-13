@@ -20,7 +20,18 @@ export function appBaseUrl(): string {
   );
 }
 
-/** Link público de un presupuesto, el que se pega en WhatsApp. */
-export function quoteShareUrl(shareToken: string): string {
+/**
+ * Link público de un presupuesto, el que se pega en WhatsApp.
+ *
+ * Falla explícitamente sin token. Antes armaba "/q/undefined" y el cliente
+ * recibía un link roto: es preferible un error en la app del usuario que un
+ * link muerto en el WhatsApp de su cliente.
+ */
+export function quoteShareUrl(shareToken: string | null | undefined): string {
+  if (!shareToken) {
+    throw new Error(
+      'Este presupuesto no tiene link público. Corré las migraciones 0003 y 0005 en Supabase.',
+    );
+  }
   return `${appBaseUrl()}/q/${shareToken}`;
 }

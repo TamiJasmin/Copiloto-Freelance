@@ -22,15 +22,3 @@ export const C = {
   paid: '#D6FF4B',
   danger: '#FF5C5C',
 } as const;
-
-export type QuoteStatus = 'borrador' | 'enviado' | 'aprobado' | 'cobrado';
-
-export const STATUS_META: Record<
-  QuoteStatus,
-  { label: string; color: string; chipBg: string }
-> = {
-  borrador: { label: 'Borrador', color: C.draft, chipBg: 'rgba(90,90,99,0.16)' },
-  enviado: { label: 'Enviado', color: C.sent, chipBg: 'rgba(255,176,32,0.14)' },
-  aprobado: { label: 'Aprobado', color: C.approved, chipBg: 'rgba(77,159,255,0.14)' },
-  cobrado: { label: 'Cobrado', color: C.paid, chipBg: 'rgba(214,255,75,0.14)' },
-};

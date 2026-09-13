@@ -1,5 +1,11 @@
 export type ClientStatus = 'prospecto' | 'activo' | 'inactivo';
-export type QuoteStatus = 'borrador' | 'enviado' | 'aprobado' | 'cobrado';
+export type QuoteStatus =
+  | 'borrador'
+  | 'enviado'
+  | 'aprobado'
+  | 'cobrado'
+  | 'rechazado'
+  | 'anulado';
 
 export type PaymentInfo = {
   tipo?: 'cbu' | 'alias' | 'paypal' | 'mp';
@@ -52,6 +58,7 @@ export type Quote = {
   share_token: string;
   valid_until: string | null;
   sent_at: string | null;
+  approved_at: string | null;
   paid_at: string | null;
   created_at: string;
   updated_at: string;
@@ -69,4 +76,13 @@ export type DashboardSummary = {
   collected: number;
   pending: number;
   open_count: number;
+};
+
+/** Fila de la vista `clients_overview`: cliente + agregados de sus presupuestos. */
+export type ClientOverview = Client & {
+  quotes_count: number;
+  total_cobrado: number;
+  total_pendiente: number;
+  morosos: number;
+  last_quote_at: string | null;
 };

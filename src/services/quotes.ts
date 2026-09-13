@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { quoteShareUrl } from '@/lib/share';
-import { openWhatsApp, quoteMessage } from '@/services/whatsapp';
+import { openWhatsApp, quoteMessage, reminderMessage } from '@/services/whatsapp';
 import type { QuoteItem, QuoteStatus, QuoteWithClient, User } from '@/types/db';
 
 type CreateArgs = {
@@ -59,16 +59,45 @@ export async function createQuote({
  * puede congelar el JS, y es preferible un presupuesto marcado como enviado
  * que el usuario no mandó, a uno mandado que sigue figurando como borrador.
  */
-export async function sendQuote(quote: QuoteWithClient, _profile: User): Promise<void> {
-  // El mensaje lleva un link a la página pública del presupuesto, no un
-  // archivo: wa.me no puede adjuntar nada, y un link funciona igual en
-  // web, iOS y Android sin depender del motor de impresión del dispositivo.
+/**
+ * Abre WhatsApp con el presupuesto.
+ *
+ * IMPORTANTE: en web esto tiene que salir del clic del usuario sin ningún
+ * await por delante. Cualquier espera previa hace que el navegador tome la
+ * ventana como no solicitada y la bloquee sin avisar — el presupuesto
+ * quedaba marcado como enviado y no se abría nada.
+ *
+ * Por eso el cambio de estado va DESPUÉS, y no se espera antes de abrir.
+ */
+export function sendQuote(quote: QuoteWithClient): void {
+  if (!quote.share_token) {
+    throw new Error(
+      'Este presupuesto no tiene link público. Falta correr la migración 0003 en Supabase.',
+    );
+  }
+
   const link = quoteShareUrl(quote.share_token);
 
-  // El estado se marca ANTES de salir a WhatsApp: irse de la app puede
-  // congelar el JS, y es preferible un falso "enviado" a un presupuesto
-  // mandado que sigue figurando como borrador.
-  await supabase.from('quotes').update({ status: 'enviado' }).eq('id', quote.id);
+  // Primero la ventana, dentro del gesto.
+  void openWhatsApp(quote.client_whatsapp, quoteMessage(quote, link));
 
-  await openWhatsApp(quote.client_whatsapp, quoteMessage(quote, link));
+  // Después el estado. Si falla, el usuario igual mandó el mensaje.
+  if (quote.status === 'borrador') {
+    void supabase.from('quotes').update({ status: 'enviado' }).eq('id', quote.id);
+  }
+}
+
+/** Recordatorio de cobro, con los datos de pago si están cargados. */
+export function remindQuote(quote: QuoteWithClient, profile: User | null): void {
+  void openWhatsApp(quote.client_whatsapp, reminderMessage(quote, profile?.payment_info));
+}
+
+export async function updateQuoteStatus(id: string, status: QuoteStatus): Promise<void> {
+  const { error } = await supabase.from('quotes').update({ status }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteQuote(id: string): Promise<void> {
+  const { error } = await supabase.from('quotes').delete().eq('id', id);
+  if (error) throw error;
 }

@@ -35,6 +35,16 @@ export default function Dashboard() {
           overline="Hola,"
           title={name}
           action={
+            <View className="flex-row items-center gap-2">
+            <Pressable
+              onPress={() => router.push('/clients')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Clientes"
+              className="h-10 w-10 items-center justify-center rounded-full border border-border bg-surface active:opacity-70"
+            >
+              <Ionicons name="people-outline" size={18} color={C.muted} />
+            </Pressable>
             <Pressable
               onPress={() => router.push('/settings')}
               hitSlop={8}
@@ -46,6 +56,7 @@ export default function Dashboard() {
                 {name.trim().charAt(0).toUpperCase()}
               </Text>
             </Pressable>
+            </View>
           }
         />
       }

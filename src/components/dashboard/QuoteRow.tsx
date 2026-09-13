@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusPill } from '@/components/ui/StatusPill';
+import { quoteView } from '@/lib/quoteState';
 import { C } from '@/theme/tokens';
 import { money, relativeDay } from '@/lib/format';
 import type { QuoteWithClient } from '@/types/db';
@@ -8,13 +9,19 @@ import type { QuoteWithClient } from '@/types/db';
 type Props = {
   quote: QuoteWithClient;
   onPress: () => void;
-  onRemind: () => void;
+  onRemind?: () => void;
+  /** Muestra el número de presupuesto. Útil en el historial. */
+  showNumber?: boolean;
 };
 
-export function QuoteRow({ quote, onPress, onRemind }: Props) {
-  // El recordatorio sólo tiene sentido si ya salió y hay a quién escribirle.
-  const canRemind =
-    (quote.status === 'enviado' || quote.status === 'aprobado') && !!quote.client_whatsapp;
+export function QuoteRow({ quote, onPress, onRemind, showNumber }: Props) {
+  const view = quoteView(quote);
+
+  // Sólo tiene sentido insistir si ya salió, sigue abierto y hay a quién escribirle.
+  const puedeRecordar =
+    !!onRemind &&
+    !!quote.client_whatsapp &&
+    !['borrador', 'cobrado', 'rechazado', 'anulado'].includes(view);
 
   return (
     <Pressable
@@ -28,8 +35,11 @@ export function QuoteRow({ quote, onPress, onRemind }: Props) {
           {quote.client_name}
         </Text>
         <View className="mt-2 flex-row items-center">
-          <StatusPill status={quote.status} />
-          <Text className="ml-2 text-caption text-faint">{relativeDay(quote.created_at)}</Text>
+          <StatusPill view={view} />
+          <Text className="ml-2 text-caption text-faint" numberOfLines={1}>
+            {showNumber ? `#${quote.number} · ` : ''}
+            {relativeDay(quote.created_at)}
+          </Text>
         </View>
       </View>
 
@@ -41,7 +51,7 @@ export function QuoteRow({ quote, onPress, onRemind }: Props) {
         {money(quote.total_amount, quote.currency, true)}
       </Text>
 
-      {canRemind ? (
+      {puedeRecordar ? (
         <Pressable
           onPress={onRemind}
           hitSlop={10}

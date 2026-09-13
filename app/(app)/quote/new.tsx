@@ -15,7 +15,10 @@ import { Button } from '@/components/ui/Button';
 import { Screen, ScreenHeader } from '@/components/ui/Screen';
 import { useClients } from '@/hooks/useClients';
 import { useSession } from '@/hooks/useSession';
-import { createQuote, sendQuote } from '@/services/quotes';
+import { supabase } from '@/lib/supabase';
+import { createQuote } from '@/services/quotes';
+import { quoteShareUrl } from '@/lib/share';
+import { quoteMessage, reserveWhatsAppWindow } from '@/services/whatsapp';
 import { friendlyError } from '@/lib/errors';
 import { C } from '@/theme/tokens';
 
@@ -52,6 +55,10 @@ export default function NewQuote() {
       return setFailure('Todavía estamos cargando los datos de tu negocio.');
     }
 
+    // La ventana se reserva ACA, dentro del gesto del clic. Si se abriera
+    // despues de guardar, el navegador la bloquearia por no ser solicitada.
+    const abrirWhatsApp = mode === 'send' ? reserveWhatsAppWindow() : null;
+
     setBusy(mode);
     setFailure(null);
 
@@ -72,9 +79,15 @@ export default function NewQuote() {
           })),
       });
 
-      if (mode === 'send') await sendQuote(quote, profile!);
+      if (abrirWhatsApp) {
+        // quoteShareUrl falla si falta el token, y el catch muestra por que.
+        const link = quoteShareUrl(quote.share_token);
+        abrirWhatsApp(quote.client_whatsapp, quoteMessage(quote, link));
+        void supabase.from('quotes').update({ status: 'enviado' }).eq('id', quote.id);
+      }
 
-      router.back();
+      // Al detalle, no atras: ahi se ve el presupuesto y se puede reenviar.
+      router.replace(`/quote/${quote.id}`);
     } catch (e) {
       // El objeto completo a la consola; el texto util, a la pantalla.
       console.error('[presupuesto]', e);
@@ -109,7 +122,7 @@ export default function NewQuote() {
         footer={
           <>
             <Button
-              label="Generar PDF y Enviar"
+              label="Enviar por WhatsApp"
               icon="logo-whatsapp"
               loading={busy === 'send'}
               disabled={busy !== null}

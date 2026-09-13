@@ -1,4 +1,5 @@
 import * as Linking from 'expo-linking';
+import { Platform } from 'react-native';
 import { money } from '@/lib/format';
 import type { QuoteWithClient } from '@/types/db';
 
@@ -14,6 +15,33 @@ export function whatsappUrl(phone: string | null, message: string): string {
 
 export async function openWhatsApp(phone: string | null, message: string) {
   await Linking.openURL(whatsappUrl(phone, message));
+}
+
+/**
+ * Reserva la ventana durante el clic y devuelve una función para darle la
+ * dirección más tarde.
+ *
+ * Los navegadores sólo permiten abrir ventanas dentro del gesto del
+ * usuario. Si primero se guarda el presupuesto y recién después se llama a
+ * window.open, el gesto ya caducó y la ventana se bloquea sin ningún aviso:
+ * el presupuesto queda marcado como enviado y no se abre nada.
+ *
+ * Abriendo una ventana en blanco de inmediato y navegándola al terminar, el
+ * envío sigue siendo un solo clic.
+ */
+export function reserveWhatsAppWindow(): (phone: string | null, message: string) => void {
+  const fallback = (phone: string | null, message: string) => {
+    void Linking.openURL(whatsappUrl(phone, message));
+  };
+
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return fallback;
+
+  const win = window.open('', '_blank');
+  if (!win) return fallback; // Bloqueada igual: se intenta por el camino normal.
+
+  return (phone, message) => {
+    win.location.href = whatsappUrl(phone, message);
+  };
 }
 
 const firstName = (full: string) => full.trim().split(/\s+/)[0];
