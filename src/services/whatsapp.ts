@@ -1,0 +1,45 @@
+import * as Linking from 'expo-linking';
+import { money } from '@/lib/format';
+import type { QuoteWithClient } from '@/types/db';
+
+/**
+ * Abre WhatsApp con el mensaje pre-redactado.
+ * wa.me funciona igual en iOS, Android y web — un solo camino, cero SDK.
+ */
+export async function openWhatsApp(phone: string | null, message: string) {
+  const digits = (phone ?? '').replace(/\D/g, '');
+  const base = digits ? `https://wa.me/${digits}` : 'https://wa.me/';
+  const url = `${base}?text=${encodeURIComponent(message)}`;
+  await Linking.openURL(url);
+}
+
+const firstName = (full: string) => full.trim().split(/\s+/)[0];
+
+/** Mensaje de envío de cotización. */
+export function quoteMessage(quote: QuoteWithClient, link?: string): string {
+  const ref = link ?? quote.pdf_url ?? '';
+  return (
+    `Hola ${firstName(quote.client_name)}, te adjunto la cotización acordada: ${ref}\n\n` +
+    `Total: ${money(quote.total_amount, quote.currency)}\n` +
+    `¡Saludos!`
+  );
+}
+
+/** Recordatorio de cobro — tono cordial, sin fricción. */
+export function reminderMessage(
+  quote: QuoteWithClient,
+  paymentInfo?: { tipo?: string; valor?: string },
+): string {
+  const datos =
+    paymentInfo?.valor
+      ? `\n\nDatos para la transferencia (${paymentInfo.tipo?.toUpperCase() ?? 'PAGO'}): ${paymentInfo.valor}`
+      : '';
+
+  return (
+    `¡Hola ${firstName(quote.client_name)}! ¿Cómo va todo?\n\n` +
+    `Te escribo para hacer un seguimiento del presupuesto #${quote.number} ` +
+    `por ${money(quote.total_amount, quote.currency)}. ` +
+    `Cualquier duda quedo a disposición.${datos}\n\n` +
+    `¡Gracias!`
+  );
+}

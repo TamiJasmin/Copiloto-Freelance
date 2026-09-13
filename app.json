@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Copiloto Freelance",
+    "slug": "copiloto-freelance",
+    "scheme": "copiloto",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0A0A0B",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.copiloto.freelance"
+    },
+    "android": {
+      "package": "com.copiloto.freelance"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
