@@ -4,7 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
 
-import { SheepMark } from '@/components/ui/SheepMark';
+import { LlamaMark } from '@/components/ui/LlamaMark';
 
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -153,10 +153,8 @@ export default function Login() {
     <Screen center>
       {/* ---------- Marca ---------- */}
       <View className="mb-8 items-center">
-        <View className="mb-5 h-16 w-16 items-center justify-center rounded-2xl bg-accent">
-          <SheepMark size={40} />
-        </View>
-        <Text className="text-title font-bold text-ink">Lana</Text>
+        <LlamaMark height={104} />
+        <Text className="mt-4 text-title font-bold text-ink">Lana</Text>
         <Text className="mt-2 text-center text-label text-muted">
           {entrando
             ? 'Presupuestá, mandá por WhatsApp y cobrá.'

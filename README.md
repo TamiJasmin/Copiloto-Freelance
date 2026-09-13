@@ -66,7 +66,25 @@ magic link y Google no vuelven a la app.
 > La anon key viaja en el bundle del cliente. Es así por diseño: lo que
 > protege los datos es la RLS, no el secreto de esa clave.
 
-## 4. Arquitectura
+## 4. Marca
+
+`LANA.png` en la raíz es el original de la llama. Los íconos se derivan:
+
+```bash
+npm run icons
+```
+
+Genera `assets/llama.png` (trazo blanco sobre transparente, para la app),
+`icon.png`, `adaptive-icon.png`, `splash.png` y `favicon.png`.
+
+El script recorta contra el contenido —en el original la llama ocupa el 19%
+del ancho— y para los íconos aísla la cabeza, detectando el cuello como el
+punto más angosto de la zona media. La llama entera es alta y angosta: en un
+ícono cuadrado quedaría como una astilla.
+
+Si cambiás `LANA.png`, volvé a correr `npm run icons` y listo.
+
+## 5. Arquitectura
 
 ```
 app/                          Rutas (expo-router, file-based)
@@ -99,7 +117,7 @@ supabase/migrations/          Esquema SQL
 los espeja para lo que Tailwind no alcanza (iconos, sombras, StatusBar).
 Si cambiás uno, cambiá el otro.
 
-## 5. Sistema de diseño
+## 6. Sistema de diseño
 
 | Rol | Token | Hex |
 |---|---|---|
@@ -113,7 +131,7 @@ Si cambiás uno, cambiá el otro.
 Estados: borrador gris · enviado ámbar · aprobado azul · **cobrado = acento**.
 El acento significa una sola cosa en toda la app: *plata que entró*.
 
-## 6. Estado del MVP
+## 7. Estado del MVP
 
 - [x] Auth (email + Google) con portero de rutas
 - [x] Esquema, RLS y RPC de totales
@@ -127,7 +145,7 @@ El acento significa una sola cosa en toda la app: *plata que entró*.
 - [x] Historial con busqueda y filtros
 - [x] Modulo de clientes con estados derivados
 
-## 7. Verificado
+## 8. Verificado
 
 `npm test` (20 casos, sin framework) y `npx tsc --noEmit` sin errores · `expo export` OK en web, iOS y Android.
 
