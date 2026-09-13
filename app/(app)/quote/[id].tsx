@@ -72,8 +72,11 @@ export default function QuoteDetail() {
   // directamente del clic.
   const enviar = () => {
     try {
-      sendQuote(quote);
-      setTimeout(reload, 1200);
+      // No se espera antes de abrir: la ventana sale en el gesto. Lo que
+      // sigue (grabar el estado) si se espera, para poder avisar si falla.
+      sendQuote(quote)
+        .then(reload)
+        .catch((e) => setActionError(friendlyError(e)));
     } catch (e) {
       setActionError(friendlyError(e));
     }

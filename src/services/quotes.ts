@@ -69,22 +69,18 @@ export async function createQuote({
  *
  * Por eso el cambio de estado va DESPUÉS, y no se espera antes de abrir.
  */
-export function sendQuote(quote: QuoteWithClient): void {
-  if (!quote.share_token) {
-    throw new Error(
-      'Este presupuesto no tiene link público. Falta correr la migración 0003 en Supabase.',
-    );
-  }
-
+export function sendQuote(quote: QuoteWithClient): Promise<void> {
   const link = quoteShareUrl(quote.share_token);
 
-  // Primero la ventana, dentro del gesto.
+  // Primero la ventana, dentro del gesto del clic. Todo lo demás va después.
   void openWhatsApp(quote.client_whatsapp, quoteMessage(quote, link));
 
-  // Después el estado. Si falla, el usuario igual mandó el mensaje.
+  // La promesa se devuelve para que quien llama pueda esperarla y avisar si
+  // falla. La ventana ya está abierta, así que esperar acá no la bloquea.
   if (quote.status === 'borrador') {
-    void supabase.from('quotes').update({ status: 'enviado' }).eq('id', quote.id);
+    return updateQuoteStatus(quote.id, 'enviado');
   }
+  return Promise.resolve();
 }
 
 /** Recordatorio de cobro, con los datos de pago si están cargados. */

@@ -83,7 +83,13 @@ export default function NewQuote() {
         // quoteShareUrl falla si falta el token, y el catch muestra por que.
         const link = quoteShareUrl(quote.share_token);
         abrirWhatsApp(quote.client_whatsapp, quoteMessage(quote, link));
-        void supabase.from('quotes').update({ status: 'enviado' }).eq('id', quote.id);
+        // Se espera: si falla, el usuario se entera en vez de quedar con un
+        // presupuesto que figura como borrador despues de haberlo mandado.
+        const { error } = await supabase
+          .from('quotes')
+          .update({ status: 'enviado' })
+          .eq('id', quote.id);
+        if (error) throw error;
       }
 
       // Al detalle, no atras: ahi se ve el presupuesto y se puede reenviar.
