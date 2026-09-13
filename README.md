@@ -70,21 +70,30 @@ magic link y Google no vuelven a la app.
 
 ## 4. Marca
 
-`LANA.png` en la raíz es el original de la llama. Los íconos se derivan:
+`LANA.png` en la raíz es el original: un imagotipo con la llama arriba y la
+palabra LANA debajo. Los íconos se derivan de ahí:
 
 ```bash
 npm run icons
 ```
 
-Genera `assets/llama.png` (trazo blanco sobre transparente, para la app),
-`icon.png`, `adaptive-icon.png`, `splash.png` y `favicon.png`.
+| Archivo generado | Uso |
+|---|---|
+| `llama.png` | Sólo el animal, trazo blanco sobre transparente |
+| `lockup.png` | El imagotipo completo — pantalla de ingreso |
+| `icon.png` | Tiendas. Fondo opaco: iOS no admite transparencia |
+| `adaptive-icon.png` | Android, con margen para el recorte circular |
+| `splash.png` | Pantalla de carga |
+| `favicon.png` | Pestaña del navegador |
 
-El script recorta contra el contenido —en el original la llama ocupa el 19%
-del ancho— y para los íconos aísla la cabeza, detectando el cuello como el
-punto más angosto de la zona media. La llama entera es alta y angosta: en un
-ícono cuadrado quedaría como una astilla.
+El script recorta contra el contenido —en el original la llama ocupa el 17%
+del ancho— y parte el logo por la banda de filas vacías que separa el dibujo
+de la palabra. Para los íconos usa sólo la llama: a 48px en la grilla del
+teléfono, la palabra sería una mancha.
 
-Si cambiás `LANA.png`, volvé a correr `npm run icons` y listo.
+Si cambiás `LANA.png`, volvé a correr `npm run icons`. Si el logo deja de
+tener dos bloques, el script corta con un mensaje en vez de publicar íconos
+mal recortados.
 
 ## 5. APK de Android
 
@@ -116,29 +125,47 @@ El proyecto nativo (`android/`, `ios/`) no se versiona: lo genera
 ```
 app/                          Rutas (expo-router, file-based)
   _layout.tsx                 Providers + portero de sesión
-  (auth)/login.tsx            Email magic link + Google
-  (app)/index.tsx             ★ Dashboard
-  (app)/quote/new.tsx         ★ Creador express
-  (app)/quote/[id].tsx        Detalle + cobranza  [MVP-2]
-  (app)/settings.tsx          Datos del negocio y de cobro  [MVP-2]
+  (auth)/login.tsx            Contraseña, link de acceso y Google
+  (app)/index.tsx             ★ Dashboard, ordenado por urgencia
+  (app)/quote/new.tsx         Alta  (?from=<id> arranca de una plantilla)
+  (app)/quote/[id].tsx        Detalle, estados y cobranza
+  (app)/edit/[id].tsx         Edición de ítems y vencimiento
+  (app)/quotes.tsx            Historial con búsqueda y filtros
+  (app)/clients.tsx           Agenda con estados derivados
+  (app)/settings.tsx          Mi negocio: datos de cobro y contraseña
+  q/[token].tsx               ★ Lo que ve el cliente. Sin sesión
 
 src/
-  components/ui/              Primitivas: Button, Input, StatusPill
-  components/quote/           ClientPicker, ItemsEditor
-  components/dashboard/       BalanceCard, MiniStat, QuoteRow
+  components/ui/              Button, Input, Screen, SearchBar,
+                              FilterChips, ConfirmDialog, StatusPill,
+                              LlamaMark
+  components/quote/           ClientPicker, ItemsEditor, ValidityPicker,
+                              QuoteForm (compartido por alta y edición)
+  components/dashboard/       BalanceCard, MiniStat, QuoteRow,
+                              AttentionCard
   hooks/useSession.tsx        Sesión + perfil del usuario
-  hooks/useDashboard.ts       Totales (RPC) + pendientes, con realtime
+  hooks/useDashboard.ts       Totales (RPC), pendientes y urgencias
+  hooks/useQuotes.ts          Historial con filtros, y un presupuesto suelto
   hooks/useClients.ts         Agenda en memoria + alta de clientes
-  lib/supabase.ts             Cliente único
-  lib/format.ts               Moneda, fechas relativas, teléfonos E.164
-  services/whatsapp.ts        Links wa.me + plantillas de mensaje
-  services/pdf.ts             HTML → PDF → Storage → link firmado
-  services/quotes.ts          Alta de presupuesto y flujo de envío
-  theme/tokens.ts             Colores en JS (espeja tailwind.config.js)
-  types/db.ts                 Tipos de las tablas
+  hooks/useClientsOverview.ts Agenda con agregados y estados derivados
+  lib/quoteState.ts           ★ Estados derivados y orden de urgencia
+  lib/format.ts               Moneda, fechas, teléfonos E.164
+  lib/errors.ts               Traduce los errores de Supabase
+  lib/share.ts                Links públicos de presupuesto
+  lib/nav.ts                  Cierre de pantalla con vuelta al inicio
+  services/whatsapp.ts        Links wa.me y plantillas de mensaje
+  services/pdf.ts             Documento HTML del presupuesto
+  services/quotes.ts          Alta, edición, estados y envío
 
-supabase/migrations/          Esquema SQL
+scripts/generar-iconos.js     Íconos desde LANA.png
+supabase/migrations/          Esquema SQL, en orden
 ```
+
+**Estados derivados.** Los cuatro estados de tiempo —sin respuesta, por
+vencer, vencido y moroso— NO se guardan: se calculan al mirarlos, en
+[`lib/quoteState.ts`](src/lib/quoteState.ts). Guardarlos exigiría un proceso
+que los fuera cambiando y entre corridas mostrarían algo falso, como un
+presupuesto al día el día después de vencer.
 
 **Regla de color:** los tokens viven en `tailwind.config.js`. `src/theme/tokens.ts`
 los espeja para lo que Tailwind no alcanza (iconos, sombras, StatusBar).
@@ -172,10 +199,24 @@ El acento significa una sola cosa en toda la app: *plata que entró*.
 - [x] Historial con busqueda y filtros
 - [x] Modulo de clientes con estados derivados
 - [x] Usar un presupuesto como plantilla
+- [x] Aceptar el presupuesto desde el link del cliente
+- [x] APK de Android desde GitHub Actions
+
+Pendiente: seña y pagos parciales, recordatorios automáticos, exportar para
+el contador.
 
 ## 9. Verificado
 
-`npm test` (20 casos, sin framework) y `npx tsc --noEmit` sin errores · `expo export` OK en web, iOS y Android.
+```bash
+npm test            # 35 casos, sin framework ni dependencias
+npx tsc --noEmit    # sin errores
+npx expo export     # OK en web, iOS y Android
+```
+
+Los tests cubren la aritmética de ítems, los estados derivados, el orden de
+urgencia y el cálculo de fechas. Son las funciones que ya escondieron bugs
+reales: "150.000" leído como 150, el precio cargado en el campo de cantidad y
+un error de redondeo que hacía inalcanzables dos estados.
 
 **Sobre el envío:** `wa.me` no puede adjuntar archivos — sólo acepta texto. Por
 eso el mensaje lleva un link a `/q/<token>`, una página pública que muestra el
