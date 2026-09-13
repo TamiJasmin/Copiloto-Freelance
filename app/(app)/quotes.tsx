@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { cerrar } from '@/lib/nav';
 import { Ionicons } from '@expo/vector-icons';
 
 import { QuoteRow } from '@/components/dashboard/QuoteRow';
@@ -37,7 +38,7 @@ export default function QuotesList() {
           title="Presupuestos"
           action={
             <Pressable
-              onPress={() => router.back()}
+              onPress={() => cerrar()}
               hitSlop={10}
               accessibilityRole="button"
               accessibilityLabel="Volver"

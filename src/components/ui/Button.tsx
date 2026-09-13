@@ -18,7 +18,7 @@ export function Button({ label, icon, variant = 'primary', loading, ...rest }: P
       accessibilityLabel={label}
       {...rest}
       className={[
-        'h-[52px] flex-row items-center justify-center rounded-xl active:opacity-80',
+        'h-[52px] flex-row items-center justify-center rounded-xl hover:opacity-90 active:opacity-80',
         primary ? 'bg-accent' : 'border border-border bg-elevated',
       ].join(' ')}
       style={

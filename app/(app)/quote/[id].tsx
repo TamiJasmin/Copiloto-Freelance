@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { cerrar } from '@/lib/nav';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Button } from '@/components/ui/Button';
@@ -45,7 +46,7 @@ export default function QuoteDetail() {
             {error ?? 'Puede haber sido eliminado.'}
           </Text>
           <View className="mt-6 w-full">
-            <Button label="Volver" variant="ghost" onPress={() => router.back()} />
+            <Button label="Volver" variant="ghost" onPress={() => cerrar()} />
           </View>
         </View>
       </Screen>
@@ -97,7 +98,7 @@ export default function QuoteDetail() {
     run(async () => {
       await deleteQuote(quote.id);
       setConfirmando(false);
-      router.back();
+      cerrar();
     });
 
   return (
@@ -108,7 +109,7 @@ export default function QuoteDetail() {
           title={quote.client_name}
           action={
             <Pressable
-              onPress={() => router.back()}
+              onPress={() => cerrar()}
               hitSlop={10}
               accessibilityRole="button"
               accessibilityLabel="Volver"
@@ -211,7 +212,7 @@ export default function QuoteDetail() {
         <Pressable
           onPress={() => Linking.openURL(`https://wa.me/${quote.client_whatsapp}`)}
           accessibilityRole="button"
-          className="mt-3 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 active:bg-elevated"
+          className="mt-3 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 hover:bg-elevated active:bg-elevated"
         >
           <Ionicons name="logo-whatsapp" size={17} color={C.muted} />
           <Text className="ml-2.5 flex-1 text-body text-ink">+{quote.client_whatsapp}</Text>
@@ -224,7 +225,7 @@ export default function QuoteDetail() {
         <Pressable
           onPress={() => router.push(`/edit/${quote.id}`)}
           accessibilityRole="button"
-          className="mt-3 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 active:bg-elevated"
+          className="mt-3 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 hover:bg-elevated active:bg-elevated"
         >
           <Ionicons name="create-outline" size={17} color={C.muted} />
           <Text className="ml-2.5 flex-1 text-body text-ink">Editar ítems y vencimiento</Text>
@@ -247,7 +248,7 @@ export default function QuoteDetail() {
               onPress={() => cambiarEstado(s)}
               disabled={busy}
               accessibilityRole="button"
-              className="mb-2 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 active:bg-elevated"
+              className="mb-2 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 hover:bg-elevated active:bg-elevated"
             >
               <Ionicons
                 name={s === 'cobrado' ? 'checkmark-circle' : 'arrow-forward-circle-outline'}

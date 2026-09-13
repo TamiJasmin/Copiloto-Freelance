@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { cerrar } from '@/lib/nav';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Button } from '@/components/ui/Button';
@@ -22,7 +22,6 @@ const TIPOS: { value: NonNullable<PaymentInfo['tipo']>; label: string; hint: str
 ];
 
 export default function Settings() {
-  const router = useRouter();
   const { session, profile, refreshProfile, signOut } = useSession();
 
   const [businessName, setBusinessName] = useState('');
@@ -112,7 +111,7 @@ export default function Settings() {
             title="Mi negocio"
             action={
               <Pressable
-                onPress={() => router.back()}
+                onPress={() => cerrar()}
                 hitSlop={10}
                 accessibilityRole="button"
                 accessibilityLabel="Cerrar"
@@ -174,7 +173,9 @@ export default function Settings() {
                   accessibilityState={{ selected: active }}
                   className={[
                     'rounded-full border px-3.5 py-2 active:opacity-70',
-                    active ? 'border-accent bg-accent' : 'border-border bg-surface',
+                    active
+                      ? 'border-accent bg-accent'
+                      : 'border-border bg-surface hover:border-muted hover:bg-elevated',
                   ].join(' ')}
                 >
                   <Text

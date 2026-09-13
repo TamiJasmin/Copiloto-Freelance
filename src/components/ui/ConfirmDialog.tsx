@@ -59,7 +59,7 @@ export function ConfirmDialog({
               onPress={onCancel}
               disabled={busy}
               accessibilityRole="button"
-              className="mr-2 h-[46px] flex-1 items-center justify-center rounded-xl border border-border active:opacity-70"
+              className="mr-2 h-[46px] flex-1 items-center justify-center rounded-xl border border-border hover:opacity-90 active:opacity-70"
             >
               <Text className="text-label font-bold text-ink">{cancelLabel}</Text>
             </Pressable>
@@ -68,7 +68,7 @@ export function ConfirmDialog({
               onPress={onConfirm}
               disabled={busy}
               accessibilityRole="button"
-              className="ml-2 h-[46px] flex-1 items-center justify-center rounded-xl active:opacity-70"
+              className="ml-2 h-[46px] flex-1 items-center justify-center rounded-xl hover:opacity-90 active:opacity-70"
               style={{ backgroundColor: destructive ? C.danger : C.accent }}
             >
               <Text

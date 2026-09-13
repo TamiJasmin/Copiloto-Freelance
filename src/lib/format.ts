@@ -17,6 +17,43 @@ export function currentMonthLabel(d = new Date()): string {
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/**
+ * Días que faltan hasta una fecha sin hora ("2026-09-28"). Negativo si pasó.
+ *
+ * Hay dos trampas y las dos dieron bugs reales:
+ *
+ * 1. `new Date('2026-09-28')` se parsea como medianoche UTC, que en
+ *    Argentina es el día anterior a las 21:00. La fecha se corre un día.
+ * 2. Comparar la medianoche de hoy contra el mediodía del objetivo da
+ *    medio día de más, y con Math.ceil eso suma 1 a TODOS los resultados.
+ *
+ * Por eso se ancla al mediodía local (inmune al huso) y recién ahí se baja
+ * a medianoche, para que la resta dé días enteros exactos.
+ */
+export function diasHasta(fecha: string | null | undefined): number | null {
+  if (!fecha) return null;
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  const objetivo = new Date(`${fecha}T12:00:00`);
+  if (Number.isNaN(objetivo.getTime())) return null;
+  objetivo.setHours(0, 0, 0, 0);
+
+  // round y no ceil: el cambio de horario de verano puede dejar 23 o 25 horas.
+  return Math.round((objetivo.getTime() - hoy.getTime()) / 86_400_000);
+}
+
+/** Fecha de hoy + n días, en formato YYYY-MM-DD y hora local. */
+export function fechaEnDias(n: number): string {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate(),
+  ).padStart(2, '0')}`;
+}
+
 /** "hace 3 d" / "hoy" — texto corto para las filas de la lista. */
 export function relativeDay(iso: string): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);

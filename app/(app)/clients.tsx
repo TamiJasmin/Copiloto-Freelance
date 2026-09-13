@@ -1,5 +1,5 @@
 import { ActivityIndicator, Linking, Pressable, RefreshControl, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { cerrar } from '@/lib/nav';
 import { Ionicons } from '@expo/vector-icons';
 
 import { FilterChips } from '@/components/ui/FilterChips';
@@ -24,7 +24,6 @@ const ETIQUETA: Record<Exclude<FiltroCliente, 'todos'>, { label: string; color: 
 };
 
 export default function Clients() {
-  const router = useRouter();
   const { profile } = useSession();
   const currency = profile?.currency ?? 'ARS';
   const {
@@ -49,7 +48,7 @@ export default function Clients() {
           title="Clientes"
           action={
             <Pressable
-              onPress={() => router.back()}
+              onPress={() => cerrar()}
               hitSlop={10}
               accessibilityRole="button"
               accessibilityLabel="Volver"

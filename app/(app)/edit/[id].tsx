@@ -1,5 +1,6 @@
 import { ActivityIndicator, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { cerrar } from '@/lib/nav';
 import { Ionicons } from '@expo/vector-icons';
 
 import { QuoteForm } from '@/components/quote/QuoteForm';
@@ -13,7 +14,6 @@ const CERRADOS = ['cobrado', 'rechazado', 'anulado'];
 
 export default function EditQuote() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const { quote, loading, error } = useQuote(id);
 
   if (loading) {
@@ -34,7 +34,7 @@ export default function EditQuote() {
             {error ?? 'Puede haber sido eliminado.'}
           </Text>
           <View className="mt-6 w-full">
-            <Button label="Volver" variant="ghost" onPress={() => router.back()} />
+            <Button label="Volver" variant="ghost" onPress={() => cerrar()} />
           </View>
         </View>
       </Screen>
@@ -54,7 +54,7 @@ export default function EditQuote() {
             duplicalo desde el detalle.
           </Text>
           <View className="mt-6 w-full">
-            <Button label="Volver" variant="ghost" onPress={() => router.back()} />
+            <Button label="Volver" variant="ghost" onPress={() => cerrar()} />
           </View>
         </View>
       </Screen>

@@ -38,7 +38,9 @@ export function FilterChips<T extends string>({ options, value, onChange }: Prop
             accessibilityState={{ selected: active }}
             className={[
               'h-9 flex-row items-center rounded-full border px-3.5 active:opacity-70',
-              active ? 'border-accent bg-accent' : 'border-border bg-surface',
+              active
+                ? 'border-accent bg-accent'
+                : 'border-border bg-surface hover:border-muted hover:bg-elevated',
             ].join(' ')}
             style={vacio ? { opacity: 0.45 } : undefined}
           >

@@ -1,3 +1,4 @@
+import { diasHasta } from '@/lib/format';
 import { C } from '@/theme/tokens';
 import type { Quote, QuoteStatus } from '@/types/db';
 
@@ -130,14 +131,6 @@ export function porUrgencia<T extends Derivable & { created_at: string }>(a: T, 
 
 const dias = (iso: string | null): number =>
   iso === null ? 0 : Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-
-/** Días que faltan para una fecha; negativo si ya pasó. */
-const diasHasta = (fecha: string | null): number | null => {
-  if (!fecha) return null;
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  return Math.ceil((new Date(fecha).getTime() - hoy.getTime()) / 86_400_000);
-};
 
 type Derivable = Pick<Quote, 'status' | 'sent_at' | 'valid_until'> & {
   approved_at?: string | null;

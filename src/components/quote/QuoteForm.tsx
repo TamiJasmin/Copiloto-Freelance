@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { cerrar } from '@/lib/nav';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ClientPicker, type ClientDraft } from '@/components/quote/ClientPicker';
@@ -154,7 +155,7 @@ export function QuoteForm({ quote }: Props) {
             title={editando ? 'Editar' : 'Nuevo Presupuesto'}
             action={
               <Pressable
-                onPress={() => router.back()}
+                onPress={() => cerrar()}
                 hitSlop={10}
                 accessibilityRole="button"
                 accessibilityLabel="Cerrar"

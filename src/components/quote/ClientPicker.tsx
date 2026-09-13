@@ -93,7 +93,7 @@ export function ClientPicker({ clients, value, onChange, error }: Props) {
                   onPress={() => select(c)}
                   accessibilityRole="button"
                   className={[
-                    'flex-row items-center px-4 py-3 active:bg-elevated',
+                    'flex-row items-center px-4 py-3 hover:bg-elevated active:bg-elevated',
                     i > 0 ? 'border-t border-border' : '',
                   ].join(' ')}
                 >

@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import { diasHasta, fechaEnDias } from '@/lib/format';
 import { C } from '@/theme/tokens';
 
 type Props = {
@@ -13,24 +14,6 @@ const OPCIONES: { dias: number | null; label: string }[] = [
   { dias: 15, label: '15 días' },
   { dias: 30, label: '30 días' },
 ];
-
-/** Fecha de hoy + n días, en YYYY-MM-DD y en hora local. */
-function enDias(n: number): string {
-  const d = new Date();
-  d.setHours(12, 0, 0, 0); // mediodía: evita que un cambio de huso corra el día
-  d.setDate(d.getDate() + n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`;
-}
-
-/** Días que faltan hasta una fecha, contando desde hoy. */
-function diasHasta(fecha: string): number {
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const objetivo = new Date(`${fecha}T12:00:00`);
-  return Math.round((objetivo.getTime() - hoy.getTime()) / 86_400_000);
-}
 
 const LARGO = new Intl.DateTimeFormat('es-AR', {
   day: 'numeric',
@@ -47,7 +30,7 @@ const LARGO = new Intl.DateTimeFormat('es-AR', {
  * que calcular nada mentalmente.
  */
 export function ValidityPicker({ value, onChange }: Props) {
-  const seleccion = value === null ? null : diasHasta(value);
+  const seleccion = diasHasta(value);
 
   return (
     <View>
@@ -62,12 +45,15 @@ export function ValidityPicker({ value, onChange }: Props) {
           return (
             <Pressable
               key={o.label}
-              onPress={() => onChange(o.dias === null ? null : enDias(o.dias))}
+              onPress={() => onChange(o.dias === null ? null : fechaEnDias(o.dias))}
               accessibilityRole="radio"
               accessibilityState={{ selected: activo }}
               className={[
                 'h-9 items-center justify-center rounded-full border px-3.5 active:opacity-70',
-                activo ? 'border-accent bg-accent' : 'border-border bg-surface',
+                // hover: en web avisa que el chip es tocable antes de tocarlo.
+                activo
+                  ? 'border-accent bg-accent'
+                  : 'border-border bg-surface hover:border-muted hover:bg-elevated',
               ].join(' ')}
             >
               <Text

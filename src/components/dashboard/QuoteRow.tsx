@@ -28,7 +28,7 @@ export function QuoteRow({ quote, onPress, onRemind, showNumber }: Props) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Presupuesto de ${quote.client_name} por ${money(quote.total_amount, quote.currency)}`}
-      className="mb-2 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 active:bg-elevated"
+      className="mb-2 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 hover:bg-elevated active:bg-elevated"
     >
       <View className="flex-1 pr-3">
         <Text className="text-body font-semibold text-ink" numberOfLines={1}>
