@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Screen, ScreenHeader } from '@/components/ui/Screen';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { useQuote } from '@/hooks/useQuotes';
@@ -23,6 +24,7 @@ export default function QuoteDetail() {
   const { quote, loading, error, reload } = useQuote(id);
 
   const [busy, setBusy] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   if (loading) {
@@ -94,6 +96,7 @@ export default function QuoteDetail() {
   const eliminar = () =>
     run(async () => {
       await deleteQuote(quote.id);
+      setConfirmando(false);
       router.back();
     });
 
@@ -162,6 +165,16 @@ export default function QuoteDetail() {
             {meta.accion}
           </Text>
         ) : null}
+
+        {quote.valid_until ? (
+          <Text className="mt-1 text-caption text-faint">
+            Válido hasta el{' '}
+            {new Date(`${quote.valid_until}T12:00:00`).toLocaleDateString('es-AR', {
+              day: 'numeric',
+              month: 'long',
+            })}
+          </Text>
+        ) : null}
       </View>
 
       {/* ---------- Ítems ---------- */}
@@ -206,6 +219,19 @@ export default function QuoteDetail() {
         </Pressable>
       ) : null}
 
+      {/* ---------- Editar ---------- */}
+      {!cerrado ? (
+        <Pressable
+          onPress={() => router.push(`/edit/${quote.id}`)}
+          accessibilityRole="button"
+          className="mt-3 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 active:bg-elevated"
+        >
+          <Ionicons name="create-outline" size={17} color={C.muted} />
+          <Text className="ml-2.5 flex-1 text-body text-ink">Editar ítems y vencimiento</Text>
+          <Ionicons name="chevron-forward" size={16} color={C.faint} />
+        </Pressable>
+      ) : null}
+
       {/* ---------- Cambio de estado ---------- */}
       <View className="mt-7">
         <Text className="mb-2.5 text-micro font-bold uppercase text-muted">Qué pasó</Text>
@@ -247,10 +273,24 @@ export default function QuoteDetail() {
         </View>
       ) : null}
 
+      <ConfirmDialog
+        visible={confirmando}
+        title={`¿Eliminar el presupuesto #${quote.number}?`}
+        message={
+          `Se borra para siempre, junto con su link. Si ${quote.client_name} ya lo recibió, ` +
+          `el link le va a dejar de abrir. Para sacarlo de tus pendientes sin romper nada, anulalo.`
+        }
+        confirmLabel="Eliminar"
+        destructive
+        busy={busy}
+        onConfirm={eliminar}
+        onCancel={() => setConfirmando(false)}
+      />
+
       {/* ---------- Eliminar ---------- */}
       <View className="mt-9 border-t border-border pt-5">
         <Pressable
-          onPress={eliminar}
+          onPress={() => setConfirmando(true)}
           disabled={busy}
           hitSlop={8}
           accessibilityRole="button"

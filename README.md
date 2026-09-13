@@ -129,7 +129,7 @@ El acento significa una sola cosa en toda la app: *plata que entró*.
 
 ## 7. Verificado
 
-`npx tsc --noEmit` sin errores · `expo export` OK en web, iOS y Android.
+`npm test` (20 casos, sin framework) y `npx tsc --noEmit` sin errores · `expo export` OK en web, iOS y Android.
 
 **Sobre el envío:** `wa.me` no puede adjuntar archivos — sólo acepta texto. Por
 eso el mensaje lleva un link a `/q/<token>`, una página pública que muestra el

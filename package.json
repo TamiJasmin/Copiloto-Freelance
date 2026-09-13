@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "build:web": "expo export -p web",
     "lint": "expo lint",
-    "test": "node src/components/quote/items.test.js"
+    "test": "node src/components/quote/items.test.js && node src/lib/quoteState.test.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",

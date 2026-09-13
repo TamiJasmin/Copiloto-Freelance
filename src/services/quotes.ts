@@ -12,6 +12,7 @@ type CreateArgs = {
   title?: string | null;
   notes?: string | null;
   status?: QuoteStatus;
+  validUntil?: string | null;
 };
 
 /** Inserta el presupuesto y lo devuelve ya unido al cliente. */
@@ -24,6 +25,7 @@ export async function createQuote({
   title = null,
   notes = null,
   status = 'borrador',
+  validUntil = null,
 }: CreateArgs): Promise<QuoteWithClient> {
   const { data: inserted, error } = await supabase
     .from('quotes')
@@ -36,6 +38,7 @@ export async function createQuote({
       title,
       notes,
       status,
+      valid_until: validUntil,
     })
     .select('id')
     .single();
@@ -86,6 +89,15 @@ export function sendQuote(quote: QuoteWithClient): Promise<void> {
 /** Recordatorio de cobro, con los datos de pago si están cargados. */
 export function remindQuote(quote: QuoteWithClient, profile: User | null): void {
   void openWhatsApp(quote.client_whatsapp, reminderMessage(quote, profile?.payment_info));
+}
+
+/** Edita el contenido de un presupuesto. No toca el estado ni el cliente. */
+export async function updateQuote(
+  id: string,
+  patch: { items: QuoteItem[]; total_amount: number; valid_until: string | null },
+): Promise<void> {
+  const { error } = await supabase.from('quotes').update(patch).eq('id', id);
+  if (error) throw error;
 }
 
 export async function updateQuoteStatus(id: string, status: QuoteStatus): Promise<void> {
