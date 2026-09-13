@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "build:web": "expo export -p web",
     "lint": "expo lint",
-    "test": "node src/components/quote/items.test.js && node src/lib/quoteState.test.js && node src/lib/format.test.js",
+    "test": "node src/components/quote/items.test.js && node src/lib/quoteState.test.js && node src/lib/format.test.js && node src/lib/pagos.test.js",
     "icons": "node scripts/generar-iconos.js"
   },
   "dependencies": {

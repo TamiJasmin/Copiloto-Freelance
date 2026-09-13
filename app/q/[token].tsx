@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { supabase } from '@/lib/supabase';
 import { money } from '@/lib/format';
 import { errorMessage } from '@/lib/errors';
+import { accionDePago } from '@/lib/pagos';
 import { buildQuoteHtml } from '@/services/pdf';
 import { C } from '@/theme/tokens';
 import type { QuoteItem, PaymentInfo, QuoteStatus } from '@/types/db';
@@ -41,6 +42,7 @@ export default function PublicQuote() {
   const [confirmando, setConfirmando] = useState(false);
   const [aceptando, setAceptando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [copiado, setCopiado] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
@@ -87,6 +89,22 @@ export default function PublicQuote() {
     }
   };
 
+  /**
+   * Copia el alias o CBU al portapapeles.
+   *
+   * Si el navegador no lo permite (pasa en http o en contextos sin permiso)
+   * se muestra el valor para copiarlo a mano, en vez de fallar callado.
+   */
+  const copiar = async (valor: string) => {
+    try {
+      await navigator.clipboard.writeText(valor);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch {
+      setAviso(`No pudimos copiarlo automáticamente. Es: ${valor}`);
+    }
+  };
+
   /** Imprime el documento del iframe, no la barra de acciones. */
   const imprimir = () => iframeRef.current?.contentWindow?.print();
 
@@ -125,6 +143,7 @@ export default function PublicQuote() {
   const q = state.quote;
   const aceptado = q.status === 'aprobado' || q.status === 'cobrado';
   const puedeAceptar = q.status === 'enviado';
+  const pago = accionDePago(q.payment_info);
 
   if (Platform.OS === 'web') {
     // El HTML va sin barra propia: las acciones se dibujan en React, afuera
@@ -165,6 +184,7 @@ export default function PublicQuote() {
             </div>
             <div style={{ color: C.muted, fontSize: 12 }}>
               #{q.number} · {money(q.total_amount, q.currency)}
+              {aceptado ? <span style={{ color: C.accent }}> · ✓ Aceptado</span> : null}
             </div>
           </div>
 
@@ -175,18 +195,36 @@ export default function PublicQuote() {
             Descargar PDF
           </button>
 
-          {aceptado ? (
-            <div
-              style={{
-                ...boton,
-                cursor: 'default',
-                background: 'rgba(214,255,75,0.14)',
-                color: C.accent,
-              }}
-            >
-              ✓ Aceptado
-            </div>
-          ) : puedeAceptar ? (
+          {/* El pago aparece recién después de aceptar: es el momento de
+              máxima intención, y antes de eso sólo agrega ruido a una
+              pantalla donde todavía se está decidiendo. */}
+          {aceptado && pago ? (
+            pago.clase === 'link' ? (
+              <a
+                href={pago.url}
+                target="_blank"
+                rel="noopener"
+                style={{
+                  ...boton,
+                  border: 0,
+                  background: C.accent,
+                  color: C.bg,
+                  textDecoration: 'none',
+                }}
+              >
+                {pago.etiqueta}
+              </a>
+            ) : (
+              <button
+                onClick={() => copiar(pago.valor)}
+                style={{ ...boton, border: 0, background: C.accent, color: C.bg }}
+              >
+                {copiado ? '✓ Copiado' : pago.etiqueta}
+              </button>
+            )
+          ) : null}
+
+          {aceptado ? null : puedeAceptar ? (
             <button
               onClick={() => setConfirmando(true)}
               style={{ ...boton, border: 0, background: C.accent, color: C.bg }}

@@ -17,7 +17,7 @@ const MIN_PASSWORD = 8;
 const TIPOS: { value: NonNullable<PaymentInfo['tipo']>; label: string; hint: string }[] = [
   { value: 'alias', label: 'Alias', hint: 'mi.alias.mp' },
   { value: 'cbu', label: 'CBU / CVU', hint: '0000003100000000000000' },
-  { value: 'mp', label: 'Mercado Pago', hint: 'link.mercadopago.com/tunegocio' },
+  { value: 'mp', label: 'Mercado Pago', hint: 'link.mercadopago.com.ar/tunegocio' },
   { value: 'paypal', label: 'PayPal', hint: 'paypal.me/tunegocio' },
 ];
 
@@ -195,7 +195,15 @@ export default function Settings() {
             placeholder={tipoActual.hint}
             autoCapitalize="none"
             autoCorrect={false}
+            keyboardType={tipo === 'mp' || tipo === 'paypal' ? 'url' : 'default'}
           />
+
+          {tipo === 'mp' || tipo === 'paypal' ? (
+            <Text className="mt-1.5 text-caption leading-4 text-faint">
+              Pegá tu link de cobro, no el alias: así tu cliente paga de un toque desde el
+              presupuesto. Si ponés un alias igual funciona, pero lo va a tener que copiar.
+            </Text>
+          ) : null}
 
           <View className="mt-3">
             <Input
