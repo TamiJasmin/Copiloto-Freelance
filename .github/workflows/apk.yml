@@ -1,0 +1,72 @@
+name: APK de Android
+
+# Se dispara a mano desde la pestaña Actions, o al publicar una etiqueta
+# tipo v0.2.0. No corre en cada push: compilar Android lleva unos 15
+# minutos y no aporta nada hacerlo en cada commit.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  apk:
+    name: Compilar APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      # Java 17 es el que pide Gradle en Expo SDK 53.
+      - name: Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: SDK de Android
+        uses: android-actions/setup-android@v3
+
+      - name: Dependencias
+        run: npm ci
+
+      - name: Tests
+        run: npm test
+
+      # El proyecto nativo no se versiona: se genera limpio en cada build,
+      # así no puede quedar desincronizado con app.json.
+      - name: Generar proyecto nativo
+        run: npx expo prebuild --platform android --clean
+
+      # Las claves se inyectan ACÁ y no antes: el bundle de JavaScript lo
+      # arma Gradle, así que es en este paso donde los EXPO_PUBLIC_* quedan
+      # dentro del APK. Si faltan, la app compila igual y falla al abrir.
+      - name: Compilar
+        working-directory: android
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_APP_URL: ${{ secrets.EXPO_PUBLIC_APP_URL }}
+        run: |
+          if [ -z "$EXPO_PUBLIC_SUPABASE_URL" ]; then
+            echo "Falta el secreto EXPO_PUBLIC_SUPABASE_URL."
+            echo "Cargalo en Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Publicar el APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: lana-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          retention-days: 30
+          if-no-files-found: error

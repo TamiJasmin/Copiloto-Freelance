@@ -6,3 +6,7 @@ web-build/
 .env.local
 *.log
 .DS_Store
+
+# Proyectos nativos: los genera `expo prebuild`, no se versionan
+android/
+ios/

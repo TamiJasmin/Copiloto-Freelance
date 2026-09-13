@@ -84,7 +84,28 @@ punto más angosto de la zona media. La llama entera es alta y angosta: en un
 
 Si cambiás `LANA.png`, volvé a correr `npm run icons` y listo.
 
-## 5. Arquitectura
+## 5. APK de Android
+
+Se compila en GitHub Actions: **Actions → APK de Android → Run workflow**.
+Al terminar, el APK queda en *Artifacts* de esa corrida.
+
+Antes de la primera vez hay que cargar los secretos en
+**Settings → Secrets and variables → Actions**:
+
+
+
+Sin ellos el workflow corta con un mensaje claro, en vez de entregar un APK
+que compila bien y falla al abrirse.
+
+> **Este APK no sirve para Play Store.** Expo firma el build de release con
+> la clave de depuracion, asi que se instala en cualquier telefono pero
+> Google lo rechaza. Para publicar hace falta un keystore propio.
+
+El proyecto nativo (, ) no se versiona: lo genera
+ en cada compilacion, asi no puede quedar desincronizado con
+.
+
+## 6. Arquitectura
 
 ```
 app/                          Rutas (expo-router, file-based)
@@ -117,7 +138,7 @@ supabase/migrations/          Esquema SQL
 los espeja para lo que Tailwind no alcanza (iconos, sombras, StatusBar).
 Si cambiás uno, cambiá el otro.
 
-## 6. Sistema de diseño
+## 7. Sistema de diseño
 
 | Rol | Token | Hex |
 |---|---|---|
@@ -131,7 +152,7 @@ Si cambiás uno, cambiá el otro.
 Estados: borrador gris · enviado ámbar · aprobado azul · **cobrado = acento**.
 El acento significa una sola cosa en toda la app: *plata que entró*.
 
-## 7. Estado del MVP
+## 8. Estado del MVP
 
 - [x] Auth (email + Google) con portero de rutas
 - [x] Esquema, RLS y RPC de totales
@@ -145,7 +166,7 @@ El acento significa una sola cosa en toda la app: *plata que entró*.
 - [x] Historial con busqueda y filtros
 - [x] Modulo de clientes con estados derivados
 
-## 8. Verificado
+## 9. Verificado
 
 `npm test` (20 casos, sin framework) y `npx tsc --noEmit` sin errores · `expo export` OK en web, iOS y Android.
 
