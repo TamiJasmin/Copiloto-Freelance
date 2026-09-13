@@ -10,7 +10,8 @@
     "build:web": "expo export -p web",
     "lint": "expo lint",
     "test": "node src/components/quote/items.test.js && node src/lib/quoteState.test.js && node src/lib/format.test.js && node src/lib/pagos.test.js",
-    "icons": "node scripts/generar-iconos.js"
+    "icons": "node scripts/generar-iconos.js",
+    "deploy:funcion": "supabase functions deploy crear-link-pago"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
@@ -45,6 +46,7 @@
     "@babel/core": "^7.24.0",
     "@types/react": "~19.0.10",
     "pngjs": "^7.0.0",
+    "supabase": "^2.117.0",
     "typescript": "~5.8.3"
   },
   "private": true

@@ -120,7 +120,34 @@ El proyecto nativo (`android/`, `ios/`) no se versiona: lo genera
 `expo prebuild` en cada compilación, así no puede quedar desincronizado con
 `app.json`.
 
-## 6. Arquitectura
+## 6. Cobro con Mercado Pago
+
+La app le pide a una Edge Function un link de pago con el monto exacto del
+presupuesto. El Access Token permite cobrar y devolver plata en nombre del
+usuario, asi que **nunca** toca el cliente: vive en
+`user_payment_credentials`, una tabla sin policy de SELECT que solo lee el
+servidor con `service_role`.
+
+### Desplegar la funcion
+
+```bash
+npx supabase login
+npx supabase functions deploy crear-link-pago --project-ref <ref>
+```
+
+El `<ref>` es el subdominio de tu URL de Supabase. Con `--project-ref` no
+hace falta `supabase link`, que ademas pediria la contrasena de la base.
+
+La CLI esta como dependencia de desarrollo: `npm i -g supabase` no funciona,
+Supabase bloqueo la instalacion global por npm.
+
+### Conectar la cuenta
+
+En la app, **Mi negocio -> Cobro automatico**, pegar el Access Token de
+Mercado Pago (Tus integraciones -> Credenciales). Empezar por las de prueba:
+con las de produccion cada link cobra plata real.
+
+## 7. Arquitectura
 
 ```
 app/                          Rutas (expo-router, file-based)
@@ -171,7 +198,7 @@ presupuesto al día el día después de vencer.
 los espeja para lo que Tailwind no alcanza (iconos, sombras, StatusBar).
 Si cambiás uno, cambiá el otro.
 
-## 7. Sistema de diseño
+## 8. Sistema de diseño
 
 | Rol | Token | Hex |
 |---|---|---|
@@ -185,7 +212,7 @@ Si cambiás uno, cambiá el otro.
 Estados: borrador gris · enviado ámbar · aprobado azul · **cobrado = acento**.
 El acento significa una sola cosa en toda la app: *plata que entró*.
 
-## 8. Estado del MVP
+## 9. Estado del MVP
 
 - [x] Auth (email + Google) con portero de rutas
 - [x] Esquema, RLS y RPC de totales
@@ -207,7 +234,7 @@ El acento significa una sola cosa en toda la app: *plata que entró*.
 Pendiente: generar el link de MP automaticamente (requiere Edge Function),
 seña y pagos parciales, recordatorios automáticos, exportar para el contador.
 
-## 9. Verificado
+## 10. Verificado
 
 ```bash
 npm test            # 50 casos, sin framework ni dependencias
