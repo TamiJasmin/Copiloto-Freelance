@@ -38,6 +38,7 @@
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#0A0A0B"
-    }
+    },
+    "description": "Tu trabajo vale lana. Presupuestá, mandá por WhatsApp y cobrá."
   }
 }

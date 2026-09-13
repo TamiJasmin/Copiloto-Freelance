@@ -1,4 +1,6 @@
-# 🐑 Lana
+# 🦙 Lana
+
+> **Tu trabajo vale lana.**
 
 CRM ultra-simplificado + gestor de cobros para freelancers y micro-negocios.
 Presupuestar, mandar por WhatsApp y cobrar — en menos de 3 toques.

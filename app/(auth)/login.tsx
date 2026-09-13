@@ -156,10 +156,10 @@ export default function Login() {
         {/* El imagotipo ya trae la palabra: repetirla abajo sería decir
             "Lana" dos veces en la misma pantalla. */}
         <LlamaMark variant="lockup" height={132} />
-        <Text className="mt-2 text-center text-label text-muted">
-          {entrando
-            ? 'Presupuestá, mandá por WhatsApp y cobrá.'
-            : 'Creá tu cuenta y mandá tu primer presupuesto hoy.'}
+        {/* El eslogan va siempre: el modo ya se entiende por el botón y
+            por el enlace de abajo. */}
+        <Text className="mt-3 text-center text-body font-semibold text-ink">
+          Tu trabajo vale lana.
         </Text>
       </View>
 

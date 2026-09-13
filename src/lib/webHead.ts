@@ -23,7 +23,9 @@ export function applyWebHead() {
     if (!el.parentNode) document.head.appendChild(el);
   };
 
-  meta('description', 'Presupuestá, mandá por WhatsApp y cobrá.');
+  // Eslogan y descriptor juntos: esto es lo que aparece cuando alguien
+  // comparte el link, y ahí conviene decir la promesa Y qué hace la app.
+  meta('description', 'Tu trabajo vale lana. Presupuestá, mandá por WhatsApp y cobrá.');
   meta('theme-color', C.bg);
   meta('color-scheme', 'dark');
 }
