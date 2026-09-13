@@ -103,3 +103,58 @@ test('sin datos de cobro no hay accion', () => {
 });
 
 console.log(pasaron + ' tests de pagos OK');
+
+// ============================================================
+// Link propio del presupuesto
+// ============================================================
+
+function etiquetaDeUrl(url) {
+  if (/mercadopago|mercadolibre/i.test(url)) return 'Pagar con Mercado Pago';
+  if (/paypal/i.test(url)) return 'Pagar con PayPal';
+  if (/modo/i.test(url)) return 'Pagar con MODO';
+  return 'Pagar este presupuesto';
+}
+
+function accionDePagoDe(linkDelPresupuesto, info) {
+  const propio = linkDelPresupuesto?.trim();
+  if (propio) {
+    const url = comoUrl(propio);
+    if (url) return { clase: 'link', url, etiqueta: etiquetaDeUrl(url) };
+  }
+  return accionDePago(info);
+}
+
+const ALIAS = { tipo: 'alias', valor: 'mi.alias.mp' };
+
+test('el link del presupuesto gana sobre los datos generales', () => {
+  const a = accionDePagoDe('link.mercadopago.com.ar/p/29500', ALIAS);
+  assert.equal(a.clase, 'link');
+  assert.equal(a.url, 'https://link.mercadopago.com.ar/p/29500');
+  assert.equal(a.etiqueta, 'Pagar con Mercado Pago');
+});
+
+test('sin link propio se usa lo general', () => {
+  assert.deepEqual(accionDePagoDe(null, ALIAS), accionDePago(ALIAS));
+  assert.deepEqual(accionDePagoDe('', ALIAS), accionDePago(ALIAS));
+  assert.deepEqual(accionDePagoDe('   ', ALIAS), accionDePago(ALIAS));
+});
+
+test('un link propio invalido NO deja al cliente sin forma de pagar', () => {
+  // Alguien pega cualquier cosa en el campo: mejor caer al alias del negocio
+  // que mostrar un boton que no lleva a ningun lado.
+  const a = accionDePagoDe('esto no es un link', ALIAS);
+  assert.equal(a.clase, 'copiar');
+  assert.equal(a.valor, 'mi.alias.mp');
+});
+
+test('el medio se nombra segun el dominio', () => {
+  assert.equal(accionDePagoDe('paypal.me/x/100', null).etiqueta, 'Pagar con PayPal');
+  assert.equal(accionDePagoDe('https://otracosa.com/pagar', null).etiqueta, 'Pagar este presupuesto');
+});
+
+test('sin nada cargado no hay accion', () => {
+  assert.equal(accionDePagoDe(null, null), null);
+  assert.equal(accionDePagoDe('no-es-link', {}), null);
+});
+
+console.log('5 tests de link por presupuesto OK');

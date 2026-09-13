@@ -201,15 +201,16 @@ El acento significa una sola cosa en toda la app: *plata que entró*.
 - [x] Usar un presupuesto como plantilla
 - [x] Aceptar el presupuesto desde el link del cliente
 - [x] Pagar o copiar el alias desde la pagina del presupuesto
+- [x] Link de pago con monto exacto, por presupuesto
 - [x] APK de Android desde GitHub Actions
 
-Pendiente: monto exacto en el link de Mercado Pago (requiere Edge Function),
+Pendiente: generar el link de MP automaticamente (requiere Edge Function),
 seña y pagos parciales, recordatorios automáticos, exportar para el contador.
 
 ## 9. Verificado
 
 ```bash
-npm test            # 45 casos, sin framework ni dependencias
+npm test            # 50 casos, sin framework ni dependencias
 npx tsc --noEmit    # sin errores
 npx expo export     # OK en web, iOS y Android
 ```

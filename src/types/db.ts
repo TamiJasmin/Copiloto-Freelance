@@ -54,6 +54,8 @@ export type Quote = {
   status: QuoteStatus;
   notes: string | null;
   pdf_url: string | null;
+  /** Link de pago propio de este presupuesto, con el monto exacto. */
+  payment_link: string | null;
   /** Identificador del link publico. Lo genera la base. */
   share_token: string;
   valid_until: string | null;

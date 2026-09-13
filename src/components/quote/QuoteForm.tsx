@@ -16,6 +16,7 @@ import {
 } from '@/components/quote/ItemsEditor';
 import { ValidityPicker } from '@/components/quote/ValidityPicker';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { Screen, ScreenHeader } from '@/components/ui/Screen';
 import { useClients } from '@/hooks/useClients';
 import { useSession } from '@/hooks/useSession';
@@ -77,6 +78,8 @@ export function QuoteForm({ quote, plantilla }: Props) {
     return dias === null ? null : fechaEnDias(dias);
   });
 
+  const [paymentLink, setPaymentLink] = useState<string>(base?.payment_link ?? '');
+
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState<Busy>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -122,6 +125,7 @@ export function QuoteForm({ quote, plantilla }: Props) {
           items: itemsGuardables(),
           total_amount: total,
           valid_until: validUntil,
+          payment_link: paymentLink.trim() || null,
         });
         router.replace(`/quote/${quote.id}`);
         return;
@@ -137,6 +141,7 @@ export function QuoteForm({ quote, plantilla }: Props) {
         total,
         items: itemsGuardables(),
         validUntil,
+        paymentLink: paymentLink.trim() || null,
       });
 
       if (mode === 'send' && !abrirWhatsApp) {
@@ -278,6 +283,25 @@ export function QuoteForm({ quote, plantilla }: Props) {
 
         <View className="mt-7">
           <ValidityPicker value={validUntil} onChange={setValidUntil} />
+        </View>
+
+        {/* Link de pago propio: opcional, y con el monto ya cargado.
+            Es el único lugar donde el cliente no puede equivocarse de
+            importe, así que vale la pena para los presupuestos grandes. */}
+        <View className="mt-7">
+          <Input
+            label="Link de pago (opcional)"
+            value={paymentLink}
+            onChangeText={setPaymentLink}
+            placeholder="link.mercadopago.com.ar/…"
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+          />
+          <Text className="mt-1.5 text-caption leading-4 text-faint">
+            Si generás en Mercado Pago un link con el monto exacto y lo pegás acá, tu cliente paga
+            de un toque sin escribir el importe. Si lo dejás vacío se usan los datos de Mi negocio.
+          </Text>
         </View>
 
         {failure ? (

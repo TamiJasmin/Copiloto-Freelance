@@ -7,7 +7,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { supabase } from '@/lib/supabase';
 import { money } from '@/lib/format';
 import { errorMessage } from '@/lib/errors';
-import { accionDePago } from '@/lib/pagos';
+import { accionDePagoDe } from '@/lib/pagos';
 import { buildQuoteHtml } from '@/services/pdf';
 import { C } from '@/theme/tokens';
 import type { QuoteItem, PaymentInfo, QuoteStatus } from '@/types/db';
@@ -22,6 +22,7 @@ type SharedQuote = {
   currency: string;
   notes: string | null;
   status: QuoteStatus;
+  payment_link: string | null;
   client_name: string;
   business_name: string | null;
   business_email: string;
@@ -143,7 +144,7 @@ export default function PublicQuote() {
   const q = state.quote;
   const aceptado = q.status === 'aprobado' || q.status === 'cobrado';
   const puedeAceptar = q.status === 'enviado';
-  const pago = accionDePago(q.payment_info);
+  const pago = accionDePagoDe(q.payment_link, q.payment_info);
 
   if (Platform.OS === 'web') {
     // El HTML va sin barra propia: las acciones se dibujan en React, afuera
