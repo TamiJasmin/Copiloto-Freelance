@@ -132,13 +132,20 @@ export function buildQuoteHtml(
     print-color-adjust: exact;
   }
 
+  /* Mobile primero: la mayoría abre esto desde el WhatsApp del teléfono.
+     El A4 fijo queda sólo para imprimir, más abajo. */
   .sheet {
-    width: 210mm; min-height: 297mm;
-    margin: 0 auto; padding: 18mm 16mm;
+    width: 100%;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 24px 18px;
     background: #fff;
   }
 
-  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 16px; flex-wrap: wrap;
+  }
   .logo { height: 40px; margin-bottom: 8px; display: block; }
   .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
   .brand-mail { font-size: 12px; color: #71717A; margin-top: 2px; }
@@ -195,7 +202,7 @@ export function buildQuoteHtml(
   /* Barra de acciones: sólo en pantalla, nunca en el papel. */
   .toolbar {
     position: sticky; top: 0; z-index: 10;
-    display: flex; gap: 10px; justify-content: center;
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
     padding: 12px; background: #18181B;
   }
   .toolbar button, .toolbar a {
@@ -205,10 +212,27 @@ export function buildQuoteHtml(
   }
   .toolbar .wa { background: #D6FF4B; color: #111113; }
 
+  /* Teléfonos angostos: el bloque del documento pasa abajo del nombre. */
+  @media (max-width: 430px) {
+    .doc { text-align: left; }
+    .doc .num { font-size: 22px; }
+    .total { padding: 12px 14px; }
+    .total .amount { font-size: 21px; }
+    .toolbar button, .toolbar a { flex: 1; text-align: center; padding: 12px 10px; }
+  }
+
+  /* Con lugar de sobra, se ve como una hoja de verdad. */
+  @media (min-width: 700px) {
+    .sheet { padding: 18mm 16mm; min-height: 297mm; }
+  }
+
   @media print {
     .toolbar { display: none !important; }
     html, body { background: #fff; }
-    .sheet { margin: 0; padding: 16mm 14mm; width: auto; min-height: auto; }
+    .sheet {
+      width: auto; max-width: none; min-height: auto;
+      margin: 0; padding: 16mm 14mm;
+    }
   }
 </style></head>
 <body>

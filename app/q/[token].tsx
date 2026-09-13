@@ -113,7 +113,9 @@ export default function PublicQuote() {
       <iframe
         srcDoc={html}
         title={`Presupuesto #${q.number}`}
-        style={{ border: 0, width: '100vw', height: '100vh', display: 'block' }}
+        // 100dvh sigue a la barra del navegador movil; 100vh la ignora y
+        // deja el final del documento tapado.
+        style={{ border: 0, width: '100%', height: '100dvh', display: 'block' }}
       />
     );
   }
@@ -130,7 +132,7 @@ export default function PublicQuote() {
           {money(q.total_amount, q.currency)}
         </Text>
         <Pressable
-          onPress={() => Linking.openURL(`${q.business_email}`)}
+          onPress={() => Linking.openURL(`mailto:${q.business_email}`)}
           className="mt-8 h-[52px] items-center justify-center rounded-xl border border-border px-6"
         >
           <Text className="text-body font-semibold text-ink">Contactar</Text>
