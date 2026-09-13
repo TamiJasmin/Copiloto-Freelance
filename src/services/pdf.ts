@@ -33,102 +33,247 @@ function base64ToBytes(b64: string): Uint8Array {
   return bytes;
 }
 
+const ENTITIES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+
 /**
- * Plantilla del PDF. Es intencionalmente clara (papel = claro) aunque la app
- * sea dark: lo que ve el cliente tiene que imprimirse y leerse bien.
+ * Escapa todo lo que escribió el usuario antes de interpolarlo.
+ * Sin esto, un cliente llamado "Pérez & Co" o un ítem con "<" rompen el
+ * documento, y un nombre con etiquetas podría inyectar markup.
  */
-function template(quote: QuoteWithClient, user: User): string {
+const esc = (v: unknown): string => String(v ?? '').replace(/[&<>"']/g, (c) => ENTITIES[c]);
+
+const fecha = (iso: string | Date): string =>
+  new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+type HtmlOptions = {
+  /** Si viene, se agrega una barra de acciones que no se imprime. */
+  whatsappUrl?: string;
+};
+
+/**
+ * Plantilla del presupuesto.
+ *
+ * Va en claro aunque la app sea oscura: esto lo imprime y lo archiva el
+ * cliente, y un documento con fondo negro es ilegible en papel y gasta
+ * medio cartucho. El acento lima aparece sólo como bloque del total, donde
+ * sobre texto negro tiene contraste de sobra.
+ */
+export function buildQuoteHtml(
+  quote: QuoteWithClient,
+  user: User,
+  { whatsappUrl }: HtmlOptions = {},
+): string {
   const rows = quote.items
-    .map(
-      (i) => `
-      <tr>
-        <td>${i.description}${i.qty && i.qty > 1 ? ` <span class="qty">×${i.qty}</span>` : ''}</td>
-        <td class="right">${money(i.amount * (i.qty ?? 1), quote.currency)}</td>
-      </tr>`,
-    )
+    .map((i) => {
+      const qty = i.qty && i.qty > 1 ? ` <span class="qty">× ${esc(i.qty)}</span>` : '';
+      return `<tr>
+        <td>${esc(i.description)}${qty}</td>
+        <td class="right">${esc(money(i.amount * (i.qty ?? 1), quote.currency))}</td>
+      </tr>`;
+    })
     .join('');
 
   const pago = user.payment_info?.valor
-    ? `<p class="pay"><strong>${(user.payment_info.tipo ?? 'Pago').toUpperCase()}:</strong> ${user.payment_info.valor}${
-        user.payment_info.titular ? ` — ${user.payment_info.titular}` : ''
-      }</p>`
+    ? `<section class="pay">
+         <h2>Datos para el pago</h2>
+         <p><strong>${esc((user.payment_info.tipo ?? 'pago').toUpperCase())}</strong>
+            ${esc(user.payment_info.valor)}</p>
+         ${user.payment_info.titular ? `<p class="muted">Titular: ${esc(user.payment_info.titular)}</p>` : ''}
+       </section>`
+    : `<section class="pay warn">
+         <h2>Datos para el pago</h2>
+         <p class="muted">Cargá tu CBU o alias en "Mi negocio" para que aparezcan acá.</p>
+       </section>`;
+
+  const toolbar = whatsappUrl
+    ? `<div class="toolbar">
+         <button onclick="window.print()">Descargar PDF</button>
+         <a class="wa" href="${esc(whatsappUrl)}" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+       </div>`
     : '';
 
   return `<!doctype html>
-<html><head><meta charset="utf-8" />
+<html lang="es"><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Presupuesto #${esc(quote.number)} — ${esc(user.business_name ?? '')}</title>
 <style>
+  /* Sin margen de página el navegador deja de estampar URL, fecha y "1/1". */
+  @page { size: A4; margin: 0; }
+
   * { box-sizing: border-box; }
-  body { font: 14px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif; color: #18181B; padding: 48px; }
-  header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
-  .brand { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
-  .logo { height: 44px; }
-  .meta { text-align: right; color: #71717A; font-size: 12px; }
-  h1 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.4px; color: #71717A; margin: 0 0 6px; font-weight: 600; }
-  .client { font-size: 17px; font-weight: 600; margin-bottom: 36px; }
-  table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-       color: #A1A1AA; border-bottom: 1px solid #E4E4E7; padding-bottom: 10px; font-weight: 600; }
-  td { padding: 14px 0; border-bottom: 1px solid #F4F4F5; }
-  .right { text-align: right; font-variant-numeric: tabular-nums; }
+  html, body { margin: 0; padding: 0; background: #F4F4F5; }
+  body {
+    font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #18181B;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .sheet {
+    width: 210mm; min-height: 297mm;
+    margin: 0 auto; padding: 18mm 16mm;
+    background: #fff;
+  }
+
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 40px; margin-bottom: 8px; display: block; }
+  .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .brand-mail { font-size: 12px; color: #71717A; margin-top: 2px; }
+
+  .doc { text-align: right; }
+  .doc .kind {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: #71717A;
+  }
+  .doc .num { font-size: 26px; font-weight: 700; letter-spacing: -0.8px; margin-top: 2px; }
+  .doc .date { font-size: 12px; color: #71717A; margin-top: 4px; }
+
+  .rule { height: 3px; background: #18181B; margin: 22px 0 28px; }
+
+  h2 {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.6px;
+    text-transform: uppercase; color: #A1A1AA; margin: 0 0 6px;
+  }
+  .client { font-size: 18px; font-weight: 600; }
+  .client-meta { font-size: 12px; color: #71717A; margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+  th {
+    text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px;
+    color: #A1A1AA; border-bottom: 1.5px solid #18181B; padding-bottom: 8px; font-weight: 700;
+  }
+  th.right, td.right { text-align: right; }
+  td { padding: 13px 0; border-bottom: 1px solid #EFEFF1; vertical-align: top; }
+  .right { font-variant-numeric: tabular-nums; white-space: nowrap; }
   .qty { color: #A1A1AA; }
-  .total td { border: 0; padding-top: 24px; font-size: 20px; font-weight: 700; }
-  .pay { margin-top: 40px; padding: 16px; background: #FAFAFA; border-radius: 10px; font-size: 13px; }
-  footer { margin-top: 56px; font-size: 11px; color: #A1A1AA; text-align: center; }
+
+  .total {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #D6FF4B; color: #111113;
+    padding: 14px 18px; border-radius: 10px; margin-top: 22px;
+  }
+  .total .label { font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+  .total .amount { font-size: 24px; font-weight: 700; letter-spacing: -0.6px; font-variant-numeric: tabular-nums; }
+
+  .pay { margin-top: 30px; padding: 16px 18px; background: #FAFAFA; border: 1px solid #EFEFF1; border-radius: 10px; }
+  .pay p { margin: 0; font-size: 14px; }
+  .pay strong { display: inline-block; min-width: 52px; color: #71717A; font-size: 11px; letter-spacing: 1px; }
+  .pay.warn { background: #FFFBEB; border-color: #FDE68A; }
+  .muted { color: #71717A; font-size: 12px; }
+
+  .notes { margin-top: 22px; font-size: 13px; color: #3F3F46; white-space: pre-wrap; }
+  .valid { margin-top: 22px; font-size: 12px; color: #71717A; }
+
+  footer {
+    margin-top: 40px; padding-top: 16px; border-top: 1px solid #EFEFF1;
+    font-size: 11px; color: #A1A1AA; display: flex; justify-content: space-between;
+  }
+
+  /* Barra de acciones: sólo en pantalla, nunca en el papel. */
+  .toolbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; gap: 10px; justify-content: center;
+    padding: 12px; background: #18181B;
+  }
+  .toolbar button, .toolbar a {
+    font: 600 14px/1 -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 11px 18px; border-radius: 9px; border: 0; cursor: pointer; text-decoration: none;
+    background: #27272A; color: #FAFAFA;
+  }
+  .toolbar .wa { background: #D6FF4B; color: #111113; }
+
+  @media print {
+    .toolbar { display: none !important; }
+    html, body { background: #fff; }
+    .sheet { margin: 0; padding: 16mm 14mm; width: auto; min-height: auto; }
+  }
 </style></head>
 <body>
+${toolbar}
+<div class="sheet">
   <header>
     <div>
-      ${user.logo_url ? `<img class="logo" src="${user.logo_url}" />` : ''}
-      <div class="brand">${user.business_name ?? ''}</div>
+      ${user.logo_url ? `<img class="logo" src="${esc(user.logo_url)}" alt="" />` : ''}
+      <div class="brand">${esc(user.business_name ?? 'Mi negocio')}</div>
+      <div class="brand-mail">${esc(user.email)}</div>
     </div>
-    <div class="meta">
-      Presupuesto <strong>#${quote.number}</strong><br />
-      ${new Date(quote.created_at).toLocaleDateString('es-AR')}
-      ${quote.valid_until ? `<br />Válido hasta ${new Date(quote.valid_until).toLocaleDateString('es-AR')}` : ''}
+    <div class="doc">
+      <div class="kind">Presupuesto</div>
+      <div class="num">#${esc(quote.number)}</div>
+      <div class="date">${esc(fecha(quote.created_at))}</div>
     </div>
   </header>
 
-  <h1>Para</h1>
-  <div class="client">${quote.client_name}</div>
+  <div class="rule"></div>
+
+  <h2>Para</h2>
+  <div class="client">${esc(quote.client_name)}</div>
+  ${quote.client_whatsapp ? `<div class="client-meta">+${esc(quote.client_whatsapp)}</div>` : ''}
 
   <table>
     <thead><tr><th>Detalle</th><th class="right">Importe</th></tr></thead>
-    <tbody>
-      ${rows}
-      <tr class="total">
-        <td>Total</td>
-        <td class="right">${money(quote.total_amount, quote.currency)}</td>
-      </tr>
-    </tbody>
+    <tbody>${rows}</tbody>
   </table>
 
-  ${pago}
-  ${quote.notes ? `<p class="pay">${quote.notes}</p>` : ''}
+  <div class="total">
+    <span class="label">Total</span>
+    <span class="amount">${esc(money(quote.total_amount, quote.currency))}</span>
+  </div>
 
-  <footer>Generado con Copiloto Freelance</footer>
+  ${pago}
+  ${quote.notes ? `<div class="notes">${esc(quote.notes)}</div>` : ''}
+  ${
+    quote.valid_until
+      ? `<div class="valid">Este presupuesto tiene validez hasta el ${esc(fecha(quote.valid_until))}.</div>`
+      : ''
+  }
+
+  <footer>
+    <span>${esc(user.business_name ?? '')}</span>
+    <span>Generado con Copiloto Freelance</span>
+  </footer>
+</div>
 </body></html>`;
 }
 
 /**
- * Genera el PDF, lo sube al bucket privado y devuelve un link firmado
- * (30 días) listo para pegar en WhatsApp.
+ * Web: abre el presupuesto en una ventana propia, con la plantilla real.
+ *
+ * No se usa Print.printAsync porque en web ignora el HTML que recibe y manda
+ * a imprimir la página actual: el resultado era una captura del formulario
+ * de la app en vez de un presupuesto.
+ */
+export function openQuoteWindow(html: string): void {
+  const win = window.open('', '_blank', 'width=900,height=1100');
+  if (!win) {
+    throw new Error(
+      'El navegador bloqueó la ventana emergente. Permitila para este sitio y volvé a intentar.',
+    );
+  }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+}
+
+/**
+ * Nativo: genera el PDF, lo sube al bucket privado y devuelve un link
+ * firmado (30 días) listo para pegar en WhatsApp.
  */
 export async function generateAndUpload(
   quote: QuoteWithClient,
   user: User,
 ): Promise<{ uri: string; signedUrl: string }> {
-  const html = template(quote, user);
-
   if (Platform.OS === 'web') {
-    // printToFileAsync no existe en web: se abre el diálogo de impresión del
-    // navegador y el usuario guarda como PDF. No hay archivo que subir.
-    await Print.printAsync({ html });
-    throw new Error(
-      'En la versión web guardá el PDF desde el diálogo de impresión y compartilo a mano.',
-    );
+    throw new Error('generateAndUpload es sólo para iOS y Android; en web usá openQuoteWindow.');
   }
 
-  const { uri } = await Print.printToFileAsync({ html });
+  const { uri } = await Print.printToFileAsync({ html: buildQuoteHtml(quote, user) });
 
   const base64 = await FileSystem.readAsStringAsync(uri, {
     encoding: FileSystem.EncodingType.Base64,

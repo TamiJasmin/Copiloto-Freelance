@@ -1,6 +1,7 @@
+import { Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
-import { generateAndUpload } from '@/services/pdf';
-import { openWhatsApp, quoteMessage } from '@/services/whatsapp';
+import { buildQuoteHtml, generateAndUpload, openQuoteWindow } from '@/services/pdf';
+import { openWhatsApp, quoteMessage, whatsappUrl } from '@/services/whatsapp';
 import type { QuoteItem, QuoteStatus, QuoteWithClient, User } from '@/types/db';
 
 type CreateArgs = {
@@ -60,6 +61,18 @@ export async function createQuote({
  * que el usuario no mandó, a uno mandado que sigue figurando como borrador.
  */
 export async function sendQuote(quote: QuoteWithClient, profile: User): Promise<void> {
+  if (Platform.OS === 'web') {
+    // En el navegador no hay forma de producir un archivo para subir al
+    // Storage, así que el presupuesto se abre en su propia ventana con la
+    // plantilla real: desde ahí se descarga el PDF y se envía por WhatsApp.
+    // Una sola ventana, en el gesto del usuario, sin pelearse con el
+    // bloqueador de pop-ups.
+    const url = whatsappUrl(quote.client_whatsapp, quoteMessage(quote, ''));
+    openQuoteWindow(buildQuoteHtml(quote, profile, { whatsappUrl: url }));
+    await supabase.from('quotes').update({ status: 'enviado' }).eq('id', quote.id);
+    return;
+  }
+
   const { signedUrl } = await generateAndUpload(quote, profile);
 
   await supabase.from('quotes').update({ status: 'enviado' }).eq('id', quote.id);
