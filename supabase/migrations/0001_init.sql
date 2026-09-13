@@ -88,10 +88,13 @@ create trigger clients_touch
 
 create index if not exists clients_user_idx on public.clients (user_id, created_at desc);
 
--- Evita duplicar el mismo contacto dentro de una cuenta
+-- Evita duplicar el mismo contacto dentro de una cuenta.
+-- NO hacerlo parcial (where whatsapp_number is not null): Postgres no puede
+-- inferir un índice parcial en un ON CONFLICT, y el upsert de supabase-js
+-- falla con 400. Los NULL ya son distintos entre sí en un índice único, así
+-- que esto igual permite muchos clientes sin teléfono. Ver 0002.
 create unique index if not exists clients_user_wpp_uniq
-  on public.clients (user_id, whatsapp_number)
-  where whatsapp_number is not null;
+  on public.clients (user_id, whatsapp_number);
 
 -- ============================================================
 -- quotes  (presupuestos)
