@@ -44,7 +44,7 @@ as $$
   join public.clients c on c.id = q.client_id
   join public.users   u on u.id = q.user_id
   where q.share_token = p_token
-    and q.status <> 'anulado';
+    and q.status::text <> 'anulado';
 $$;
 
 revoke all on function public.quote_by_token(uuid) from public;
