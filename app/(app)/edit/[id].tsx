@@ -51,7 +51,7 @@ export default function EditQuote() {
           <Text className="mt-3 text-heading font-bold text-ink">Este ya no se edita</Text>
           <Text className="mt-1.5 text-center text-label leading-5 text-muted">
             Un presupuesto cerrado es el registro de lo que pasó. Si necesitás otro parecido,
-            duplicalo desde el detalle.
+            usalo como plantilla desde el detalle.
           </Text>
           <View className="mt-6 w-full">
             <Button label="Volver" variant="ghost" onPress={() => cerrar()} />

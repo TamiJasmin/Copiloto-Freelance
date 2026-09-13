@@ -70,3 +70,48 @@ test('sin fecha o con basura devuelve null', () => {
 });
 
 console.log(pasaron + ' tests de fechas OK');
+
+// ============================================================
+// duracionValidez: copiar la duración, no la fecha
+// ============================================================
+
+function duracionValidez(creadoISO, vence) {
+  if (!vence) return null;
+  const creado = new Date(creadoISO);
+  const limite = new Date(`${vence}T12:00:00`);
+  if (Number.isNaN(creado.getTime()) || Number.isNaN(limite.getTime())) return null;
+  creado.setHours(0, 0, 0, 0);
+  limite.setHours(0, 0, 0, 0);
+  const dias = Math.round((limite.getTime() - creado.getTime()) / 86_400_000);
+  return dias > 0 ? dias : null;
+}
+
+const haceDias = (n) => new Date(Date.now() - n * 86_400_000).toISOString();
+
+test('recupera la duracion original', () => {
+  // Creado hace 60 dias, vencia 15 dias despues: la duracion era 15.
+  assert.equal(duracionValidez(haceDias(60), fechaEnDias(-45)), 15);
+  assert.equal(duracionValidez(haceDias(30), fechaEnDias(-23)), 7);
+  assert.equal(duracionValidez(haceDias(10), fechaEnDias(20)), 30);
+});
+
+test('una plantilla vieja no arrastra su fecha vencida', () => {
+  // Este es el caso que motiva la funcion: copiar la fecha tal cual dejaria
+  // el presupuesto nuevo vencido desde el momento de crearlo.
+  const duracion = duracionValidez(haceDias(90), fechaEnDias(-75));
+  assert.equal(duracion, 15);
+  assert.ok(diasHasta(fechaEnDias(duracion)) > 0, 'la fecha nueva tiene que estar en el futuro');
+});
+
+test('sin vencimiento no inventa uno', () => {
+  assert.equal(duracionValidez(haceDias(10), null), null);
+  assert.equal(duracionValidez(haceDias(10), ''), null);
+});
+
+test('una duracion invalida se descarta', () => {
+  // Vencimiento anterior a la creacion: dato roto, mejor null que negativo.
+  assert.equal(duracionValidez(haceDias(10), fechaEnDias(-20)), null);
+  assert.equal(duracionValidez(haceDias(10), 'no-es-fecha'), null);
+});
+
+console.log('4 tests de duracion OK');

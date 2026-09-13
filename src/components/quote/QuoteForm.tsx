@@ -23,6 +23,7 @@ import { createQuote, updateQuote } from '@/services/quotes';
 import { quoteShareUrl } from '@/lib/share';
 import { quoteMessage, reserveWhatsAppWindow } from '@/services/whatsapp';
 import { friendlyError } from '@/lib/errors';
+import { duracionValidez, fechaEnDias } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import { C } from '@/theme/tokens';
 import type { QuoteWithClient } from '@/types/db';
@@ -42,24 +43,39 @@ function aDrafts(quote: QuoteWithClient): ItemDraft[] {
 }
 
 type Props = {
-  /** Si viene, el formulario edita en vez de crear. */
+  /** Si viene, el formulario edita ese presupuesto en vez de crear uno. */
   quote?: QuoteWithClient;
+  /**
+   * Si viene, se crea uno NUEVO copiando sus ítems, su cliente y la
+   * duración de su validez. El cliente queda editable: la mitad de las
+   * veces se repite el trabajo con otra persona, no con la misma.
+   */
+  plantilla?: QuoteWithClient;
 };
 
-export function QuoteForm({ quote }: Props) {
+export function QuoteForm({ quote, plantilla }: Props) {
   const router = useRouter();
   const { session, profile } = useSession();
   const { clients, createClient } = useClients();
 
   const editando = !!quote;
+  const base = quote ?? plantilla;
 
   const [client, setClient] = useState<ClientDraft>(
-    quote
-      ? { id: quote.client_id, name: quote.client_name, whatsapp: quote.client_whatsapp ?? '' }
+    base
+      ? { id: base.client_id, name: base.client_name, whatsapp: base.client_whatsapp ?? '' }
       : { id: null, name: '', whatsapp: '' },
   );
-  const [items, setItems] = useState<ItemDraft[]>(quote ? aDrafts(quote) : [emptyItem()]);
-  const [validUntil, setValidUntil] = useState<string | null>(quote?.valid_until ?? null);
+  const [items, setItems] = useState<ItemDraft[]>(base ? aDrafts(base) : [emptyItem()]);
+
+  // De una plantilla se copia la DURACIÓN, no la fecha: un presupuesto de
+  // hace dos meses que valía 15 días arrastraría un vencimiento ya pasado.
+  const [validUntil, setValidUntil] = useState<string | null>(() => {
+    if (quote) return quote.valid_until;
+    if (!plantilla) return null;
+    const dias = duracionValidez(plantilla.created_at, plantilla.valid_until);
+    return dias === null ? null : fechaEnDias(dias);
+  });
 
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState<Busy>(null);
@@ -151,7 +167,13 @@ export function QuoteForm({ quote }: Props) {
       <Screen
         header={
           <ScreenHeader
-            overline={editando ? `Presupuesto #${quote.number}` : undefined}
+            overline={
+              editando
+                ? `Presupuesto #${quote.number}`
+                : plantilla
+                  ? `Copiado del #${plantilla.number}`
+                  : undefined
+            }
             title={editando ? 'Editar' : 'Nuevo Presupuesto'}
             action={
               <Pressable

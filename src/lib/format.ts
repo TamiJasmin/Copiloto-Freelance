@@ -44,6 +44,27 @@ export function diasHasta(fecha: string | null | undefined): number | null {
   return Math.round((objetivo.getTime() - hoy.getTime()) / 86_400_000);
 }
 
+/**
+ * Días entre la creación de un presupuesto y su vencimiento.
+ *
+ * Sirve para copiar la *duración* y no la fecha: un presupuesto de hace dos
+ * meses que valía 15 días tiene una fecha de vencimiento ya pasada, y
+ * copiarla tal cual dejaría el nuevo presupuesto vencido antes de mandarlo.
+ */
+export function duracionValidez(creadoISO: string, vence: string | null): number | null {
+  if (!vence) return null;
+
+  const creado = new Date(creadoISO);
+  const limite = new Date(`${vence}T12:00:00`);
+  if (Number.isNaN(creado.getTime()) || Number.isNaN(limite.getTime())) return null;
+
+  creado.setHours(0, 0, 0, 0);
+  limite.setHours(0, 0, 0, 0);
+
+  const dias = Math.round((limite.getTime() - creado.getTime()) / 86_400_000);
+  return dias > 0 ? dias : null;
+}
+
 /** Fecha de hoy + n días, en formato YYYY-MM-DD y hora local. */
 export function fechaEnDias(n: number): string {
   const d = new Date();

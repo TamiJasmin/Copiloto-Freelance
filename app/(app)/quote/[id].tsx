@@ -233,6 +233,24 @@ export default function QuoteDetail() {
         </Pressable>
       ) : null}
 
+      {/* ---------- Plantilla ----------
+          Va también en los cerrados: un presupuesto cobrado es la mejor
+          plantilla que existe, porque es trabajo que ya alguien aceptó. */}
+      <Pressable
+        onPress={() => router.push(`/quote/new?from=${quote.id}`)}
+        accessibilityRole="button"
+        className="mt-2 flex-row items-center rounded-xl border border-border bg-surface px-4 py-3.5 hover:bg-elevated active:bg-elevated"
+      >
+        <Ionicons name="copy-outline" size={17} color={C.muted} />
+        <View className="ml-2.5 flex-1">
+          <Text className="text-body text-ink">Usar como plantilla</Text>
+          <Text className="mt-0.5 text-caption text-faint">
+            Crea uno nuevo con estos ítems. Podés cambiar el cliente.
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={C.faint} />
+      </Pressable>
+
       {/* ---------- Cambio de estado ---------- */}
       <View className="mt-7">
         <Text className="mb-2.5 text-micro font-bold uppercase text-muted">Qué pasó</Text>
