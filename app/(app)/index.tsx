@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
+import { AttentionCard } from '@/components/dashboard/AttentionCard';
 import { BalanceCard, MiniStat } from '@/components/dashboard/BalanceCard';
 import { QuoteRow } from '@/components/dashboard/QuoteRow';
 import { Button } from '@/components/ui/Button';
@@ -17,7 +18,7 @@ import type { QuoteWithClient } from '@/types/db';
 export default function Dashboard() {
   const router = useRouter();
   const { profile } = useSession();
-  const { summary, quotes, loading, refreshing, error, refresh } = useDashboard();
+  const { summary, quotes, atencion, loading, refreshing, error, refresh } = useDashboard();
 
   const currency = profile?.currency ?? 'ARS';
   const name = profile?.business_name ?? 'Bienvenido';
@@ -90,8 +91,21 @@ export default function Dashboard() {
             <MiniStat label="Abiertos" value={String(summary.open_count)} />
           </View>
 
+          <AttentionCard
+            count={atencion.count}
+            amount={atencion.amount}
+            top={atencion.top}
+            currency={currency}
+            onPress={() => router.push('/quotes')}
+          />
+
           <View className="mb-3 mt-8 flex-row items-center justify-between">
-            <Text className="text-heading font-bold text-ink">Pendientes</Text>
+            <View>
+              <Text className="text-heading font-bold text-ink">Pendientes</Text>
+              {quotes.length > 1 ? (
+                <Text className="mt-0.5 text-caption text-faint">Lo más urgente primero</Text>
+              ) : null}
+            </View>
             {quotes.length > 0 && (
               <Pressable onPress={() => router.push('/quotes')} hitSlop={8}>
                 <Text className="text-label font-semibold text-muted">Ver todo</Text>

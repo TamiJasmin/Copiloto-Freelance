@@ -148,3 +148,62 @@ test('los diez estados son alcanzables', () => {
 });
 
 console.log(pasaron + ' tests de estados OK');
+
+// ============================================================
+// Orden por urgencia
+// ============================================================
+
+const URGENCIA = {
+  moroso: 0, por_vencer: 1, sin_respuesta: 2, vencido: 3, aprobado: 4,
+  enviado: 5, borrador: 6, cobrado: 7, rechazado: 8, anulado: 9,
+};
+const PIDEN_ATENCION = ['moroso', 'por_vencer', 'sin_respuesta', 'vencido'];
+const pideAtencion = (v) => PIDEN_ATENCION.includes(v);
+
+function porUrgencia(a, b) {
+  const diff = URGENCIA[quoteView(a)] - URGENCIA[quoteView(b)];
+  if (diff !== 0) return diff;
+  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+}
+
+test('un moroso viejo gana a un enviado de ayer', () => {
+  const moroso = { id: 'moroso', status: 'aprobado', approved_at: haceDias(20), created_at: haceDias(40) };
+  const ayer = { id: 'ayer', status: 'enviado', sent_at: haceDias(1), valid_until: null, created_at: haceDias(1) };
+  assert.deepEqual([ayer, moroso].sort(porUrgencia).map((q) => q.id), ['moroso', 'ayer']);
+});
+
+test('a igual urgencia, primero el que espera hace mas tiempo', () => {
+  const viejo = { id: 'viejo', status: 'enviado', sent_at: haceDias(30), valid_until: null, created_at: haceDias(30) };
+  const nuevo = { id: 'nuevo', status: 'enviado', sent_at: haceDias(10), valid_until: null, created_at: haceDias(10) };
+  assert.deepEqual([nuevo, viejo].sort(porUrgencia).map((q) => q.id), ['viejo', 'nuevo']);
+});
+
+test('el orden completo respeta la escala de urgencia', () => {
+  const lista = [
+    { id: 'borrador', status: 'borrador', created_at: haceDias(1) },
+    { id: 'moroso', status: 'aprobado', approved_at: haceDias(30), created_at: haceDias(50) },
+    { id: 'enviado', status: 'enviado', sent_at: haceDias(1), valid_until: null, created_at: haceDias(1) },
+    { id: 'por_vencer', status: 'enviado', sent_at: haceDias(2), valid_until: fechaEnDias(1), created_at: haceDias(2) },
+    { id: 'aprobado', status: 'aprobado', approved_at: haceDias(2), created_at: haceDias(5) },
+  ];
+  assert.deepEqual(
+    lista.sort(porUrgencia).map((q) => q.id),
+    ['moroso', 'por_vencer', 'aprobado', 'enviado', 'borrador'],
+  );
+});
+
+test('solo cuatro estados piden atencion, y ninguno cerrado', () => {
+  assert.equal(PIDEN_ATENCION.length, 4);
+  for (const v of ['cobrado', 'rechazado', 'anulado', 'borrador', 'enviado', 'aprobado']) {
+    assert.equal(pideAtencion(v), false, v + ' no deberia pedir atencion');
+  }
+  for (const v of PIDEN_ATENCION) assert.equal(pideAtencion(v), true);
+});
+
+test('la escala cubre los diez estados sin repetir prioridad', () => {
+  const valores = Object.values(URGENCIA);
+  assert.equal(valores.length, 10);
+  assert.equal(new Set(valores).size, 10, 'dos estados con la misma prioridad hacen el orden inestable');
+});
+
+console.log('5 tests de urgencia OK');

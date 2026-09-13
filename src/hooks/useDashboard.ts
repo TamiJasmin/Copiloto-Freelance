@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { pideAtencion, porUrgencia, quoteView } from '@/lib/quoteState';
 import type { DashboardSummary, QuoteWithClient } from '@/types/db';
 
 const EMPTY: DashboardSummary = { quoted: 0, collected: 0, pending: 0, open_count: 0 };
@@ -55,5 +56,22 @@ export function useDashboard() {
     return load();
   }, [load]);
 
-  return { summary, quotes, loading, refreshing, error, refresh };
+  /**
+   * Se ordena acá y no con un ORDER BY porque la urgencia depende de
+   * estados derivados (moroso, por vencer) que no existen en la base.
+   */
+  const ordenadas = useMemo(() => [...quotes].sort(porUrgencia), [quotes]);
+
+  /** Lo que no puede esperar: cuántos son y cuánta plata representan. */
+  const atencion = useMemo(() => {
+    const urgentes = ordenadas.filter((q) => pideAtencion(quoteView(q)));
+    return {
+      count: urgentes.length,
+      amount: urgentes.reduce((sum, q) => sum + Number(q.total_amount), 0),
+      /** El más urgente de todos, para poder nombrarlo. */
+      top: urgentes[0] ?? null,
+    };
+  }, [ordenadas]);
+
+  return { summary, quotes: ordenadas, atencion, loading, refreshing, error, refresh };
 }

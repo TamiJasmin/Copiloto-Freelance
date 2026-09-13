@@ -93,6 +93,41 @@ export const VIEW_META: Record<QuoteView, ViewMeta> = {
   anulado: { label: 'Anulado', color: C.faint, chipBg: chip('90,90,99') },
 };
 
+/**
+ * Orden de urgencia: qué merece tu atención primero.
+ *
+ * No es el orden cronológico. Un moroso de hace veinte días importa más que
+ * algo que mandaste ayer, aunque el de ayer sea más reciente. Ordenar por
+ * fecha esconde justamente lo que hay que hacer.
+ */
+export const URGENCIA: Record<QuoteView, number> = {
+  moroso: 0, // te deben plata hace rato
+  por_vencer: 1, // se cae solo si no insistís
+  sin_respuesta: 2, // silencio largo
+  vencido: 3, // ya se cayó, hay que rehacerlo o cerrarlo
+  aprobado: 4, // aceptado, esperando el pago
+  enviado: 5, // en curso, nada que hacer todavía
+  borrador: 6, // depende de vos, sin apuro
+  cobrado: 7,
+  rechazado: 8,
+  anulado: 9,
+};
+
+/** Estados que piden una acción concreta de tu parte. */
+export const PIDEN_ATENCION: QuoteView[] = ['moroso', 'por_vencer', 'sin_respuesta', 'vencido'];
+
+export const pideAtencion = (view: QuoteView): boolean => PIDEN_ATENCION.includes(view);
+
+/**
+ * Comparador para listas: primero lo urgente y, dentro de lo igual de
+ * urgente, lo más viejo — que es lo que lleva más tiempo esperando.
+ */
+export function porUrgencia<T extends Derivable & { created_at: string }>(a: T, b: T): number {
+  const diff = URGENCIA[quoteView(a)] - URGENCIA[quoteView(b)];
+  if (diff !== 0) return diff;
+  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+}
+
 const dias = (iso: string | null): number =>
   iso === null ? 0 : Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
 

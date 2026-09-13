@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { supabase } from '@/lib/supabase';
 import { money } from '@/lib/format';
+import { errorMessage } from '@/lib/errors';
 import { buildQuoteHtml } from '@/services/pdf';
 import { C } from '@/theme/tokens';
-import type { QuoteItem, PaymentInfo } from '@/types/db';
+import type { QuoteItem, PaymentInfo, QuoteStatus } from '@/types/db';
 
 /** Fila que devuelve el RPC público `quote_by_token`. */
 type SharedQuote = {
@@ -18,6 +20,7 @@ type SharedQuote = {
   total_amount: number;
   currency: string;
   notes: string | null;
+  status: QuoteStatus;
   client_name: string;
   business_name: string | null;
   business_email: string;
@@ -34,6 +37,11 @@ type State =
 export default function PublicQuote() {
   const { token } = useLocalSearchParams<{ token: string }>();
   const [state, setState] = useState<State>({ kind: 'loading' });
+
+  const [confirmando, setConfirmando] = useState(false);
+  const [aceptando, setAceptando] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -55,14 +63,32 @@ export default function PublicQuote() {
     };
   }, [token]);
 
-  // En web el documento se entrega tal cual: mismo HTML que el PDF, dentro
-  // de un iframe que ocupa la pantalla. Así lo que ve el cliente y lo que
-  // se imprime son exactamente lo mismo.
   useEffect(() => {
-    if (state.kind !== 'ready' || Platform.OS !== 'web') return;
-    if (typeof document === 'undefined') return;
+    if (state.kind !== 'ready' || typeof document === 'undefined') return;
     document.title = `Presupuesto #${state.quote.number}`;
   }, [state]);
+
+  const aceptar = async () => {
+    setAceptando(true);
+    setAviso(null);
+
+    const { data, error } = await supabase.rpc('accept_quote', { p_token: token });
+
+    setAceptando(false);
+    setConfirmando(false);
+
+    if (error) return setAviso(errorMessage(error));
+
+    // La función devuelve el estado en que quedó, haya avanzado o no: si
+    // alguien ya lo había aceptado, la pantalla igual queda consistente.
+    const nuevo = data as QuoteStatus | null;
+    if (nuevo && state.kind === 'ready') {
+      setState({ kind: 'ready', quote: { ...state.quote, status: nuevo } });
+    }
+  };
+
+  /** Imprime el documento del iframe, no la barra de acciones. */
+  const imprimir = () => iframeRef.current?.contentWindow?.print();
 
   if (state.kind === 'loading') {
     return (
@@ -97,8 +123,12 @@ export default function PublicQuote() {
   }
 
   const q = state.quote;
+  const aceptado = q.status === 'aprobado' || q.status === 'cobrado';
+  const puedeAceptar = q.status === 'enviado';
 
   if (Platform.OS === 'web') {
+    // El HTML va sin barra propia: las acciones se dibujan en React, afuera
+    // del iframe, porque necesitan hablar con Supabase.
     const html = buildQuoteHtml(
       { ...q, client_whatsapp: null },
       {
@@ -109,19 +139,100 @@ export default function PublicQuote() {
       },
     );
 
+    const boton = {
+      font: '700 14px/1 inherit',
+      padding: '11px 16px',
+      borderRadius: 10,
+      cursor: 'pointer',
+    } as const;
+
     return (
-      <iframe
-        srcDoc={html}
-        title={`Presupuesto #${q.number}`}
-        // 100dvh sigue a la barra del navegador movil; 100vh la ignora y
-        // deja el final del documento tapado.
-        style={{ border: 0, width: '100%', height: '100dvh', display: 'block' }}
-      />
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
+            padding: '10px 14px',
+            background: C.bg,
+            borderBottom: `1px solid ${C.border}`,
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 130 }}>
+            <div style={{ color: C.ink, fontSize: 14, fontWeight: 700 }}>
+              {q.business_name ?? 'Presupuesto'}
+            </div>
+            <div style={{ color: C.muted, fontSize: 12 }}>
+              #{q.number} · {money(q.total_amount, q.currency)}
+            </div>
+          </div>
+
+          <button
+            onClick={imprimir}
+            style={{ ...boton, border: `1px solid ${C.border}`, background: C.surface, color: C.ink }}
+          >
+            Descargar PDF
+          </button>
+
+          {aceptado ? (
+            <div
+              style={{
+                ...boton,
+                cursor: 'default',
+                background: 'rgba(214,255,75,0.14)',
+                color: C.accent,
+              }}
+            >
+              ✓ Aceptado
+            </div>
+          ) : puedeAceptar ? (
+            <button
+              onClick={() => setConfirmando(true)}
+              style={{ ...boton, border: 0, background: C.accent, color: C.bg }}
+            >
+              Aceptar presupuesto
+            </button>
+          ) : null}
+        </div>
+
+        {aviso ? (
+          <div
+            style={{
+              padding: '10px 14px',
+              background: 'rgba(255,92,92,0.1)',
+              color: C.danger,
+              fontSize: 13,
+            }}
+          >
+            {aviso}
+          </div>
+        ) : null}
+
+        <iframe
+          ref={iframeRef}
+          srcDoc={html}
+          title={`Presupuesto #${q.number}`}
+          style={{ border: 0, width: '100%', flex: 1, display: 'block' }}
+        />
+
+        <ConfirmDialog
+          visible={confirmando}
+          title="¿Aceptar este presupuesto?"
+          message={
+            `Le vas a confirmar a ${q.business_name ?? 'quien te lo envió'} que estás de acuerdo ` +
+            `con ${money(q.total_amount, q.currency)}. Lo va a ver al instante.`
+          }
+          confirmLabel="Sí, acepto"
+          busy={aceptando}
+          onConfirm={aceptar}
+          onCancel={() => setConfirmando(false)}
+        />
+      </div>
     );
   }
 
-  // Nativo: el link https lo abre el navegador, no la app, así que esto
-  // sólo se ve si alguien navega acá desde adentro. Vista mínima y correcta.
+  // Nativo: el link https lo abre el navegador, no la app. Vista mínima.
   return (
     <View className="flex-1 bg-bg">
       <View className="flex-1 items-center justify-center px-6">
