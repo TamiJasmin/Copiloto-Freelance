@@ -16,9 +16,16 @@ function comoUrl(valor) {
   return pareceDominio && tieneRuta ? `https://${limpio}` : null;
 }
 
-const ETIQUETAS = {
+const ETIQUETA_LINK = {
   mp: 'Pagar con Mercado Pago',
   paypal: 'Pagar con PayPal',
+  alias: 'Pagar',
+  cbu: 'Pagar',
+};
+
+const ETIQUETA_COPIA = {
+  mp: 'Copiar datos de pago',
+  paypal: 'Copiar datos de pago',
   alias: 'Copiar alias',
   cbu: 'Copiar CBU',
 };
@@ -27,12 +34,11 @@ function accionDePago(info) {
   const valor = info?.valor?.trim();
   if (!valor) return null;
   const tipo = info?.tipo ?? 'alias';
-  const etiqueta = ETIQUETAS[tipo] ?? 'Copiar datos de pago';
   if (tipo === 'mp' || tipo === 'paypal') {
     const url = comoUrl(valor);
-    if (url) return { clase: 'link', url, etiqueta };
+    if (url) return { clase: 'link', url, etiqueta: ETIQUETA_LINK[tipo] };
   }
-  return { clase: 'copiar', valor, etiqueta };
+  return { clase: 'copiar', valor, etiqueta: ETIQUETA_COPIA[tipo] ?? 'Copiar datos de pago' };
 }
 
 let pasaron = 0;
@@ -82,6 +88,40 @@ test('MP cargado como alias cae a copiar, no a un link roto', () => {
   const a = accionDePago({ tipo: 'mp', valor: 'mi.alias.mp' });
   assert.equal(a.clase, 'copiar', 'no debe inventar un link');
   assert.equal(a.valor, 'mi.alias.mp');
+  // El bug que motivo este test: la accion era correcta pero el boton seguia
+  // diciendo "Pagar con Mercado Pago" y lo unico que hacia era copiar.
+  assert.equal(a.etiqueta, 'Copiar datos de pago', 'el texto tiene que decir lo que hace');
+});
+
+test('INVARIANTE: el texto del boton coincide con lo que hace', () => {
+  // Esta es la proteccion de verdad: no importa que combinacion entre, un
+  // boton que copia nunca puede decir "Pagar" ni al reves.
+  const tipos = ['mp', 'paypal', 'alias', 'cbu'];
+  const valores = [
+    'mi.alias.mp',
+    'link.mercadopago.com.ar/x',
+    'https://paypal.me/x',
+    '0000003100000000000000',
+    'cualquier cosa',
+    'sin.puntos',
+  ];
+
+  for (const tipo of tipos) {
+    for (const valor of valores) {
+      const a = accionDePago({ tipo, valor });
+      if (!a) continue;
+      const dicePagar = /pagar/i.test(a.etiqueta);
+      const diceCopiar = /copiar/i.test(a.etiqueta);
+
+      if (a.clase === 'link') {
+        assert.ok(dicePagar, `link con texto "${a.etiqueta}" (${tipo}/${valor})`);
+        assert.ok(!diceCopiar, `un link no deberia decir copiar: ${a.etiqueta}`);
+      } else {
+        assert.ok(diceCopiar, `copiar con texto "${a.etiqueta}" (${tipo}/${valor})`);
+        assert.ok(!dicePagar, `copiar no deberia decir pagar: ${a.etiqueta} (${tipo}/${valor})`);
+      }
+    }
+  }
 });
 
 test('alias y CBU se copian, con su etiqueta', () => {

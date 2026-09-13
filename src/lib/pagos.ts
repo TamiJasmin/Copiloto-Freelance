@@ -12,9 +12,25 @@ export type AccionPago =
   | { clase: 'link'; url: string; etiqueta: string }
   | { clase: 'copiar'; valor: string; etiqueta: string };
 
-const ETIQUETAS: Record<NonNullable<PaymentInfo['tipo']>, string> = {
+/**
+ * Las etiquetas se eligen por ACCIÓN, no por medio de pago.
+ *
+ * Antes había una sola tabla por tipo y se resolvía el texto antes de decidir
+ * qué se iba a hacer. Resultado: alguien elegía "Mercado Pago" y pegaba su
+ * alias, el código caía correctamente a copiar —para no inventar un link
+ * roto— pero el botón seguía diciendo "Pagar con Mercado Pago". Decía una
+ * cosa y hacía otra.
+ */
+const ETIQUETA_LINK: Record<NonNullable<PaymentInfo['tipo']>, string> = {
   mp: 'Pagar con Mercado Pago',
   paypal: 'Pagar con PayPal',
+  alias: 'Pagar',
+  cbu: 'Pagar',
+};
+
+const ETIQUETA_COPIA: Record<NonNullable<PaymentInfo['tipo']>, string> = {
+  mp: 'Copiar datos de pago',
+  paypal: 'Copiar datos de pago',
   alias: 'Copiar alias',
   cbu: 'Copiar CBU',
 };
@@ -79,14 +95,14 @@ export function accionDePago(info: PaymentInfo | null | undefined): AccionPago |
   if (!valor) return null;
 
   const tipo = info?.tipo ?? 'alias';
-  const etiqueta = ETIQUETAS[tipo] ?? 'Copiar datos de pago';
 
   // Sólo los medios que son un link se ofrecen como link. Un CBU nunca lo es,
   // aunque alguien pegue algo con barras.
   if (tipo === 'mp' || tipo === 'paypal') {
     const url = comoUrl(valor);
-    if (url) return { clase: 'link', url, etiqueta };
+    if (url) return { clase: 'link', url, etiqueta: ETIQUETA_LINK[tipo] };
   }
 
-  return { clase: 'copiar', valor, etiqueta };
+  // Acá ya se sabe que la acción es copiar, así que la etiqueta lo dice.
+  return { clase: 'copiar', valor, etiqueta: ETIQUETA_COPIA[tipo] ?? 'Copiar datos de pago' };
 }
